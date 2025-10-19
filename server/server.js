@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
-import { connectDB } from "./config/db.js"; // ✅ Import DB connection
+import { connectDB } from "./config/db.js"; // ✅ DB connection
 
 // =====================================================
 // 🧩 ROUTE IMPORTS
@@ -31,11 +31,23 @@ const app = express();
 await connectDB();
 
 // =====================================================
-// ⚙️ MIDDLEWARE CONFIGURATION
+// ⚙️ CORS CONFIGURATION (✅ Updated for Render)
 // =====================================================
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://personalised-recommendations-1.onrender.com",
+];
+
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn("🚫 CORS blocked request from:", origin);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -173,6 +185,6 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🎥 TMDB Provider API enabled`);
   console.log(
-    `🌍 Frontend origin: ${process.env.CLIENT_ORIGIN || "http://localhost:5173"}`
+    `🌍 Frontend origins allowed: ${allowedOrigins.join(", ")}`
   );
 });
