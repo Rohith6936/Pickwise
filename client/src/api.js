@@ -1,12 +1,11 @@
 import axios from "axios";
 
 // =====================================================
-// 🌍 BASE CONFIGURATION (✅ AUTO DETECTION FOR PROD)
+// 🌍 BASE CONFIGURATION (✅ RELIES ON .env FILES)
 // =====================================================
-const API_BASE_URL =
-  import.meta.env.MODE === "development"
-    ? "http://localhost:5000"
-    : "https://personalised-recommendations.onrender.com";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+console.log("🔗 Using API base URL:", API_BASE_URL); // Debug log
 
 const API = axios.create({
   baseURL: `${API_BASE_URL}/api`,
