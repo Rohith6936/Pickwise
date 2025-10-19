@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import "../styles/Mood.css";
+import { API_BASE_URL } from "../api"; // ✅ import this
 
 const providerLinks = {
   "Netflix": "https://www.netflix.com/",
@@ -29,7 +30,8 @@ export default function MoodMovies() {
   const fetchMovies = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`http://localhost:5000/api/mood/${genre}?t=${Date.now()}`);
+      // ✅ Dynamic URL based on environment
+      const res = await fetch(`${API_BASE_URL}/api/mood/${genre}?t=${Date.now()}`);
       const data = await res.json();
       setMovies(data);
     } catch (err) {

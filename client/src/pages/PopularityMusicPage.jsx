@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import axios from "axios";
 import "../styles/MusicModePages.css";
+import { API_BASE_URL } from "../api"; // ✅ Import dynamic base URL
 
-const API = axios.create({ baseURL: "http://localhost:5000/api/spotify" });
+// ✅ Use environment-aware API base
+const API = axios.create({ baseURL: `${API_BASE_URL}/api/spotify` });
 
 export default function PopularityMusicPage() {
   const [popType, setPopType] = useState("");
@@ -15,7 +17,8 @@ export default function PopularityMusicPage() {
       const fetchedTracks = res.data || [];
       setAllTracks(fetchedTracks);
       setTracks(getRandomFive(fetchedTracks));
-    } catch {
+    } catch (err) {
+      console.error("❌ Failed to fetch popular tracks:", err.message);
       alert("Failed to fetch popular tracks!");
     }
   }
@@ -56,7 +59,10 @@ export default function PopularityMusicPage() {
           <div className="track-grid">
             {tracks.map((t) => (
               <div key={t.id} className="track-card">
-                <img src={t.album.images[0]?.url} alt="" />
+                <img
+                  src={t.album.images[0]?.url}
+                  alt={t.name || "Album cover"}
+                />
                 <p>{t.name}</p>
                 <small>{t.artists.map((a) => a.name).join(", ")}</small>
               </div>

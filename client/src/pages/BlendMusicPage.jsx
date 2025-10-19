@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "../styles/MusicModePages.css";
+import { API_BASE_URL } from "../api"; // ✅ Import dynamic backend base URL
 
-const API = axios.create({ baseURL: "http://localhost:5000/api" });
+// ✅ Use environment-aware base URL
+const API = axios.create({ baseURL: `${API_BASE_URL}/api` });
 
 export default function BlendMusicPage() {
   const [activeTab, setActiveTab] = useState("send"); // send | receive
@@ -44,8 +46,8 @@ export default function BlendMusicPage() {
       setStatus("✅ Blend request sent successfully!");
       setBlendTracks([]);
     } catch (err) {
+      console.error("❌ Error sending request:", err.message);
       setStatus("❌ Failed to send request.");
-      console.error(err);
     }
   }
 
@@ -58,7 +60,7 @@ export default function BlendMusicPage() {
         setStatus("📭 No pending or accepted requests.");
       else setStatus("");
     } catch (err) {
-      console.error(err);
+      console.error("❌ Error loading requests:", err.message);
       setStatus("❌ Failed to load requests.");
     }
   }
@@ -78,11 +80,12 @@ export default function BlendMusicPage() {
       setBlendTracks(res.data.recommendations || []);
       loadRequests();
     } catch (err) {
-      console.error("Accept failed:", err);
+      console.error("❌ Accept failed:", err.message);
       setStatus("❌ Accept failed");
     }
   }
 
+  // ⏰ Time formatter
   function timeAgo(dateString) {
     const date = new Date(dateString);
     const diff = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -203,7 +206,7 @@ export default function BlendMusicPage() {
           <div className="track-grid">
             {blendTracks.map((t) => (
               <div key={t.id} className="track-card">
-                <img src={t.album.images[0]?.url} alt="" />
+                <img src={t.album.images[0]?.url} alt={t.name} />
                 <p>{t.name}</p>
                 <small>{t.artists.map((a) => a.name).join(", ")}</small>
               </div>

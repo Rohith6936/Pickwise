@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import axios from "axios";
 import "../styles/MusicModePages.css";
+import { API_BASE_URL } from "../api"; // ✅ Import the dynamic base URL
 
-const API = axios.create({ baseURL: "http://localhost:5000/api/spotify" });
+// ✅ Use environment-based API base
+const API = axios.create({ baseURL: `${API_BASE_URL}/api/spotify` });
 
 const popularArtists = [
   "Arijit Singh",
@@ -26,29 +28,32 @@ export default function ArtistMusicPage() {
 
   async function searchArtistByName(name) {
     try {
-      const res = await API.get(`/artist/${name}`);
+      const res = await API.get(`/artist/${encodeURIComponent(name)}`);
       setArtistInfo(res.data);
       setTracks([]);
       setAllTracks([]);
-    } catch {
+    } catch (err) {
+      console.error("❌ Error fetching artist:", err.message);
       alert("Artist not found!");
     }
   }
 
   async function fetchTopTracks() {
+    if (!artistInfo) return;
     try {
       const res = await API.get(
-        `/artist/${artistInfo.id}/toptracks?genre=${selectedGenre}`
+        `/artist/${artistInfo.id}/toptracks?genre=${encodeURIComponent(selectedGenre)}`
       );
       const fetchedTracks = res.data || [];
       setAllTracks(fetchedTracks);
       setTracks(getRandomFive(fetchedTracks));
-    } catch {
+    } catch (err) {
+      console.error("❌ Error fetching top tracks:", err.message);
       alert("Failed to fetch tracks!");
     }
   }
 
-  // Helper function to pick 5 random unique tracks
+  // 🎵 Helper function to select 5 random unique tracks
   function getRandomFive(trackList) {
     if (trackList.length <= 5) return trackList;
     const shuffled = [...trackList].sort(() => 0.5 - Math.random());
@@ -87,7 +92,7 @@ export default function ArtistMusicPage() {
 
       {artistInfo && (
         <div className="artist-info">
-          {artistInfo.image && <img src={artistInfo.image} alt="" />}
+          {artistInfo.image && <img src={artistInfo.image} alt={artistInfo.name} />}
           <h2>{artistInfo.name}</h2>
           <p>Genres: {artistInfo.genres.join(", ")}</p>
 
@@ -113,7 +118,7 @@ export default function ArtistMusicPage() {
           <div className="track-grid">
             {tracks.map((t) => (
               <div key={t.id} className="track-card">
-                <img src={t.album.images[0]?.url} alt="" />
+                <img src={t.album.images[0]?.url} alt={t.name || "Track"} />
                 <p>{t.name}</p>
                 <small>{t.artists.map((a) => a.name).join(", ")}</small>
               </div>

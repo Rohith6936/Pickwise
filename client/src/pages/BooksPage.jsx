@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaHeart, FaBook, FaSyncAlt } from "react-icons/fa";
 import "../styles/BooksPage.css";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../api"; // ✅ import from your api.js
 
 const BooksPage = () => {
   const [books, setBooks] = useState([]);
@@ -17,8 +18,9 @@ const BooksPage = () => {
     try {
       setIsLoading(true);
 
-      // ✅ Corrected backticks for template string
-      const res = await fetch(`http://localhost:5000/api/books?genre=${genre}`);
+      // ✅ Uses deployed API dynamically (no localhost hardcoding)
+      const res = await fetch(`${API_BASE_URL}/api/books?genre=${genre}`);
+
       if (!res.ok) {
         throw new Error(`Server responded with status ${res.status}`);
       }
@@ -28,7 +30,6 @@ const BooksPage = () => {
 
       if (data && Array.isArray(data.items)) {
         const cleanBooks = data.items.filter((b) => b.volumeInfo);
-        // Randomly select 5 books from the fetched list
         const randomFive = cleanBooks.sort(() => 0.5 - Math.random()).slice(0, 5);
         setBooks(randomFive);
       } else {
