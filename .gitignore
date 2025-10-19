@@ -1,0 +1,74 @@
+# ======================================================
+# 🧠 GENERAL LOGS & DEBUG FILES
+# ======================================================
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ======================================================
+# 🧩 NODE MODULES & BUILD OUTPUTS
+# ======================================================
+node_modules/
+dist/
+dist-ssr/
+build/
+*.local
+*.cache
+coverage/
+tmp/
+temp/
+
+# ======================================================
+# ⚙️ ENVIRONMENT CONFIGS (keep secrets safe)
+# ======================================================
+.env
+.env.local
+.env.production
+.env.development
+/server/.env
+/server/.env.local
+/client/.env
+/client/.env.local
+
+# ======================================================
+# 🧱 BACKEND SPECIFIC (server)
+# ======================================================
+server/node_modules/
+server/logs/
+server/uploads/
+server/.cache/
+
+# ======================================================
+# 💻 FRONTEND SPECIFIC (client)
+# ======================================================
+client/node_modules/
+client/dist/
+client/.vite/
+client/.vercel/
+client/.netlify/
+
+# ======================================================
+# 🧑‍💻 EDITOR / OS FILES
+# ======================================================
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ======================================================
+# ⚡ MISC
+# ======================================================
+# Ignore local preview data or API test files
+*.bak
+*.tmp
+*.orig
