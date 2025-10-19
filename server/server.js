@@ -2,6 +2,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import nodemailer from "nodemailer";
 import { connectDB } from "./config/db.js";
 import { Resend } from "resend";
 
@@ -31,7 +32,7 @@ const app = express();
 await connectDB();
 
 // =====================================================
-// ⚙️ CORS CONFIGURATION (✅ Updated for Render)
+// ⚙️ CORS CONFIGURATION
 // =====================================================
 const allowedOrigins = [
   "http://localhost:5173",
@@ -63,36 +64,91 @@ app.use((req, res, next) => {
 });
 
 // =====================================================
-// 📧 OTP SUPPORT — Email Verification (Resend Integration)
+// 📧 EMAIL CONFIGURATION — Resend + SMTP (Auto-Fallback)
 // =====================================================
-const resend = new Resend(process.env.RESEND_API_KEY);
-const OTP_EXPIRY_SECONDS = process.env.OTP_EXPIRY_SECONDS
-  ? Number(process.env.OTP_EXPIRY_SECONDS)
-  : 300;
+let sendEmail; // function used to send emails
 
+// --- Option 1: Use Resend ---
+if (process.env.RESEND_API_KEY) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  sendEmail = async (to, subject, text, html = null) => {
+    const fromAddress =
+      process.env.RESEND_FROM || "PickWise <onboarding@resend.dev>";
+    try {
+      await resend.emails.send({
+        from: fromAddress,
+        to,
+        subject,
+        text,
+        html,
+      });
+      console.log(`✅ Email sent via Resend to ${to}`);
+    } catch (err) {
+      console.error("❌ Resend email failed:", err?.message || err);
+      throw new Error("Resend email delivery failed");
+    }
+  };
+  console.log("📨 Email provider: Resend");
+}
+
+// --- Option 2: Use SMTP if Resend not available ---
+if (!sendEmail && process.env.SMTP_USER && process.env.SMTP_PASS) {
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: Number(process.env.SMTP_PORT || 587),
+    secure: Number(process.env.SMTP_PORT || 587) === 465,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+
+  transporter.verify((err, success) => {
+    if (err) {
+      console.error("⚠ SMTP connection failed:", err.message);
+    } else {
+      console.log("✅ SMTP transporter ready");
+    }
+  });
+
+  sendEmail = async (to, subject, text, html = null) => {
+    try {
+      await transporter.sendMail({
+        from: process.env.SMTP_USER,
+        to,
+        subject,
+        text,
+        html,
+      });
+      console.log(`✅ Email sent via SMTP to ${to}`);
+    } catch (err) {
+      console.error("❌ SMTP email failed:", err.message);
+      throw new Error("SMTP email delivery failed");
+    }
+  };
+  console.log("📨 Email provider: SMTP");
+}
+
+// --- Fallback if neither provider is configured ---
+if (!sendEmail) {
+  console.warn(
+    "⚠ No email provider configured. Set either RESEND_API_KEY or SMTP_USER/SMTP_PASS."
+  );
+  sendEmail = async () => {
+    throw new Error("Email service not configured");
+  };
+}
+
+// =====================================================
+// 🔐 OTP MANAGEMENT
+// =====================================================
+const OTP_EXPIRY_SECONDS = Number(process.env.OTP_EXPIRY_SECONDS || 300);
 const otpStore = new Map();
 
 function generateOtp(digits = 6) {
   const min = Math.pow(10, digits - 1);
   const max = Math.pow(10, digits) - 1;
   return String(Math.floor(Math.random() * (max - min + 1) + min));
-}
-
-// ✅ Send Email via Resend
-async function sendMail(to, subject, text, html = null) {
-  try {
-    await resend.emails.send({
-      from: process.env.SMTP_USER || "PickWise <onboarding@resend.dev>",
-      to,
-      subject,
-      text,
-      html,
-    });
-    console.log(`✅ OTP email sent to ${to}`);
-  } catch (err) {
-    console.error("❌ Email send failed:", err.message);
-    throw new Error("Email delivery failed");
-  }
 }
 
 // ===== Send OTP =====
@@ -113,7 +169,7 @@ app.post("/api/send-otp", async (req, res) => {
 
     otpStore.set(email, { otp, expiresAt, timeoutHandle });
 
-    const htmlContent = `
+    const html = `
       <div style="font-family: Arial, sans-serif; padding: 20px;">
         <h2 style="color:#4f46e5;">🔐 PickWise Verification</h2>
         <p>Your OTP is:</p>
@@ -127,20 +183,20 @@ app.post("/api/send-otp", async (req, res) => {
       </div>
     `;
 
-    await sendMail(
+    await sendEmail(
       email,
-      "Your Signup OTP",
-      `Your OTP is: ${otp}. It will expire in ${Math.floor(
+      "Your PickWise Signup OTP",
+      `Your OTP is: ${otp}. It expires in ${Math.floor(
         OTP_EXPIRY_SECONDS / 60
       )} minutes.`,
-      htmlContent
+      html
     );
 
     console.log(`✅ OTP sent to ${email}: ${otp}`);
-    return res.json({ ok: true, message: "OTP sent to email" });
+    res.json({ ok: true, message: "OTP sent to email" });
   } catch (err) {
-    console.error("❌ send-otp error:", err);
-    return res.status(500).json({ error: "Failed to send OTP" });
+    console.error("❌ send-otp error:", err.message);
+    res.status(500).json({ error: "Failed to send OTP" });
   }
 });
 
@@ -168,7 +224,7 @@ app.post("/api/verify-otp", (req, res) => {
   otpStore.delete(email);
 
   console.log(`✅ OTP verified for ${email}`);
-  return res.json({ ok: true, message: "OTP verified" });
+  res.json({ ok: true, message: "OTP verified" });
 });
 
 // =====================================================
@@ -188,6 +244,13 @@ app.use("/api/books", booksRouter);
 
 // ===== Error Handling Middleware =====
 app.use(errorHandler);
+
+// =====================================================
+// 🌍 HEALTH CHECK ENDPOINT (important for Render)
+// =====================================================
+app.get("/", (req, res) => {
+  res.send("✅ PickWise Backend is running successfully");
+});
 
 // =====================================================
 // 🚀 SERVER LISTENER
