@@ -1,9 +1,9 @@
 /* eslint-disable no-undef */
 import express from "express";
 import cors from "cors";
-import nodemailer from "nodemailer";
 import dotenv from "dotenv";
-import { connectDB } from "./config/db.js"; // ✅ DB connection
+import { connectDB } from "./config/db.js";
+import { Resend } from "resend";
 
 // =====================================================
 // 🧩 ROUTE IMPORTS
@@ -63,22 +63,12 @@ app.use((req, res, next) => {
 });
 
 // =====================================================
-// 📧 OTP SUPPORT — Email Verification
+// 📧 OTP SUPPORT — Email Verification (Resend Integration)
 // =====================================================
-const SMTP_HOST = process.env.SMTP_HOST || "smtp.gmail.com";
-const SMTP_PORT = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587;
-const SMTP_USER = process.env.SMTP_USER || "";
-const SMTP_PASS = process.env.SMTP_PASS || "";
+const resend = new Resend(process.env.RESEND_API_KEY);
 const OTP_EXPIRY_SECONDS = process.env.OTP_EXPIRY_SECONDS
   ? Number(process.env.OTP_EXPIRY_SECONDS)
   : 300;
-
-const transporter = nodemailer.createTransport({
-  host: SMTP_HOST,
-  port: SMTP_PORT,
-  secure: SMTP_PORT === 465,
-  auth: { user: SMTP_USER, pass: SMTP_PASS },
-});
 
 const otpStore = new Map();
 
@@ -88,9 +78,17 @@ function generateOtp(digits = 6) {
   return String(Math.floor(Math.random() * (max - min + 1) + min));
 }
 
-async function sendMail(to, subject, text) {
+// ✅ Send Email via Resend
+async function sendMail(to, subject, text, html = null) {
   try {
-    await transporter.sendMail({ from: SMTP_USER, to, subject, text });
+    await resend.emails.send({
+      from: process.env.SMTP_USER || "PickWise <onboarding@resend.dev>",
+      to,
+      subject,
+      text,
+      html,
+    });
+    console.log(`✅ OTP email sent to ${to}`);
   } catch (err) {
     console.error("❌ Email send failed:", err.message);
     throw new Error("Email delivery failed");
@@ -115,12 +113,27 @@ app.post("/api/send-otp", async (req, res) => {
 
     otpStore.set(email, { otp, expiresAt, timeoutHandle });
 
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2 style="color:#4f46e5;">🔐 PickWise Verification</h2>
+        <p>Your OTP is:</p>
+        <h1 style="color:#1e293b; letter-spacing: 2px;">${otp}</h1>
+        <p>This code will expire in <b>${Math.floor(
+          OTP_EXPIRY_SECONDS / 60
+        )} minutes</b>.</p>
+        <p style="color:#6b7280; font-size: 0.9rem;">
+          If you didn’t request this, please ignore this email.
+        </p>
+      </div>
+    `;
+
     await sendMail(
       email,
       "Your Signup OTP",
-      `Your OTP is: ${otp}\n\nThis code will expire in ${Math.floor(
+      `Your OTP is: ${otp}. It will expire in ${Math.floor(
         OTP_EXPIRY_SECONDS / 60
-      )} minutes.\n\nIf you did not request this, please ignore this email.`
+      )} minutes.`,
+      htmlContent
     );
 
     console.log(`✅ OTP sent to ${email}: ${otp}`);
@@ -180,11 +193,7 @@ app.use(errorHandler);
 // 🚀 SERVER LISTENER
 // =====================================================
 const PORT = process.env.PORT || 5000;
-
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🎥 TMDB Provider API enabled`);
-  console.log(
-    `🌍 Frontend origins allowed: ${allowedOrigins.join(", ")}`
-  );
+  console.log(`🌍 Allowed origins: ${allowedOrigins.join(", ")}`);
 });
