@@ -1,5 +1,5 @@
 // server/controllers/feedbackController.js
-const Feedback = require("../models/Feedback");
+import Feedback from "../models/Feedback.js";
 
 const FeedbackController = {
   // ✅ Save or update feedback
@@ -78,4 +78,4 @@ const FeedbackController = {
   },
 };
 
-module.exports = FeedbackController;
+export default FeedbackController;

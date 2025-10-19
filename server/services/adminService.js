@@ -1,7 +1,7 @@
-exports.updateConfig = async (config) => {
+export const updateConfig = async (config) => {
   return { updated: true, config };
 };
 
-exports.reindex = async () => {
+export const reindex = async () => {
   return { status: "reindex started" };
 };

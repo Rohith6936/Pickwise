@@ -1,5 +1,5 @@
 // server/services/feedbackService.js
-const Feedback = require("../models/Feedback");
+import Feedback from "../models/Feedback.js";
 
 async function getAverageRating(contentId) {
   const feedbacks = await Feedback.find({ contentId, rating: { $exists: true } });
@@ -11,4 +11,4 @@ async function getAverageRating(contentId) {
   return { average: average.toFixed(1), total: feedbacks.length };
 }
 
-module.exports = { getAverageRating };
+export { getAverageRating };

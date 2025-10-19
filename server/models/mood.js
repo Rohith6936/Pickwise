@@ -1,5 +1,5 @@
 // server/models/Mood.js
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const moodSchema = new mongoose.Schema({
   email: { type: String, required: true },
@@ -7,4 +7,4 @@ const moodSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model("Mood", moodSchema);
+export default mongoose.model("Mood", moodSchema);

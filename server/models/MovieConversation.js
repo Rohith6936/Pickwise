@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const messageSchema = new mongoose.Schema({
   role: {
@@ -74,4 +74,4 @@ movieConversationSchema.pre('save', function(next) {
   next();
 });
 
-module.exports = mongoose.model('MovieConversation', movieConversationSchema);
+export default mongoose.model('MovieConversation', movieConversationSchema);

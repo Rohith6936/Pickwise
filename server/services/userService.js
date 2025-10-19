@@ -1,9 +1,9 @@
-const User = require("../models/User");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+import User from "../models/User.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 // 🧩 USER SIGNUP
-exports.signup = async ({ name, email, password, role }) => {
+export const signup = async ({ name, email, password, role }) => {
   const existingUser = await User.findOne({ email });
   if (existingUser) throw new Error("User already exists");
 
@@ -15,7 +15,7 @@ exports.signup = async ({ name, email, password, role }) => {
 };
 
 // 🔐 USER LOGIN
-exports.login = async ({ email, password }) => {
+export const login = async ({ email, password }) => {
   const user = await User.findOne({ email });
   if (!user) throw new Error("Invalid credentials");
 
@@ -32,7 +32,7 @@ exports.login = async ({ email, password }) => {
 };
 
 // 🎯 SAVE PREFERENCES — supports movies, music, and books
-exports.savePreferences = async (email, type, preferencesData) => {
+export const savePreferences = async (email, type, preferencesData) => {
   const user = await User.findOne({ email });
   if (!user) throw new Error("User not found");
 
@@ -53,7 +53,7 @@ exports.savePreferences = async (email, type, preferencesData) => {
 };
 
 // 📖 GET PREFERENCES — for a specific category
-exports.getPreferences = async (email, type) => {
+export const getPreferences = async (email, type) => {
   const user = await User.findOne({ email });
   if (!user) throw new Error("User not found");
 

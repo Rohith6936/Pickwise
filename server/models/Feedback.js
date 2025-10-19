@@ -1,5 +1,5 @@
 // server/models/Feedback.js
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const FeedbackSchema = new mongoose.Schema({
   userId: { type: String, required: true },
@@ -14,4 +14,4 @@ const FeedbackSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.model("Feedback", FeedbackSchema);
+export default mongoose.model("Feedback", FeedbackSchema);

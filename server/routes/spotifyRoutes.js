@@ -1,6 +1,11 @@
-const express = require("express");
-const SpotifyWebApi = require("spotify-web-api-node");
-require("dotenv").config();
+import express from "express";
+import SpotifyWebApi from "spotify-web-api-node";
+import dotenv from "dotenv";
+import BlendRequest from "../models/BlendRequest.js";
+import User from "../models/User.js";
+import BlendHistory from "../models/BlendHistory.js";
+
+dotenv.config();
 
 const router = express.Router();
 
@@ -113,9 +118,6 @@ router.get("/popular", async (req, res) => {
 });
 
 // ====== BLEND FEATURE ======
-const BlendRequest = require("../models/BlendRequest");
-const User = require("../models/User");
-const BlendHistory = require("../models/BlendHistory"); // ✅ new import
 
 // ===== Create Blend Request =====
 router.post("/blend/request", async (req, res) => {
@@ -242,7 +244,7 @@ router.post("/blend/accept/:id", async (req, res) => {
   }
 });
 
-// ===== Get All Requests (pending + accepted) =====
+// ===== Get All Requests =====
 router.get("/blend/all/:email", async (req, res) => {
   try {
     const { email } = req.params;
@@ -280,7 +282,6 @@ router.post("/recommendations", async (req, res) => {
       return res.status(400).json({ error: "Artist name is required" });
     }
 
-    // 🎤 Search for the artist
     const artistRes = await spotifyApi.searchArtists(artist, { limit: 1 });
     const artistItem = artistRes.body.artists.items[0];
     if (!artistItem) {
@@ -288,7 +289,6 @@ router.post("/recommendations", async (req, res) => {
       return res.status(404).json({ error: "Artist not found" });
     }
 
-    // 🎧 Get artist's top tracks
     const topTracks = await spotifyApi.getArtistTopTracks(artistItem.id, "IN");
     const allTracks = topTracks.body.tracks || [];
 
@@ -297,7 +297,6 @@ router.post("/recommendations", async (req, res) => {
       return res.status(404).json({ error: "No songs found for this artist" });
     }
 
-    // 🎯 Paginate results — 5 per batch
     const paginated = allTracks.slice(offset, offset + 5).map((t) => ({
       title: t.name,
       artist: t.artists.map((a) => a.name).join(", "),
@@ -308,9 +307,7 @@ router.post("/recommendations", async (req, res) => {
 
     const nextOffset = offset + 5 < allTracks.length ? offset + 5 : null;
 
-    console.log(
-      `✅ Returning ${paginated.length} tracks for '${artist}', nextOffset: ${nextOffset}`
-    );
+    console.log(`✅ Returning ${paginated.length} tracks for '${artist}', nextOffset: ${nextOffset}`);
 
     res.json({
       artist: artistItem.name,
@@ -325,4 +322,4 @@ router.post("/recommendations", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const BlendHistorySchema = new mongoose.Schema({
   userEmail: { type: String, required: true },
@@ -7,4 +7,4 @@ const BlendHistorySchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.model("BlendHistory", BlendHistorySchema);
+export default mongoose.model("BlendHistory", BlendHistorySchema);

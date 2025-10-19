@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-const axios = require("axios");
+import axios from "axios";
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
 // Normalize watch providers
@@ -38,7 +38,7 @@ function shuffle(arr) {
 }
 
 // Fetch TMDB data
-exports.getMoviesByMood = async (req, res) => {
+export const getMoviesByMood = async (req, res) => {
   const { genre } = req.params;
 
   try {

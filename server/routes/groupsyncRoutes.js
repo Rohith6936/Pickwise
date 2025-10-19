@@ -1,7 +1,12 @@
-const router = require("express").Router();
-const GroupController = require("../controllers/groupsyncController");
+import express from "express";
+import { createGroup, getGroup } from "../controllers/groupsyncController.js";
 
-router.post("/", GroupController.createGroup);
-router.get("/:sessionId", GroupController.getGroup);
+const router = express.Router();
 
-module.exports = router;
+// 👥 Create a new group
+router.post("/", createGroup);
+
+// 📋 Get details of a specific group
+router.get("/:sessionId", getGroup);
+
+export default router;

@@ -1,7 +1,18 @@
-const router = require("express").Router();
-const AdminController = require("../controllers/adminController");
-const auth = require("../middlewares/auth");
-const authorizeRoles = require("../middlewares/roleCheck");
+import express from "express";
+import {
+  updateConfig,
+  reindex,
+  getUsers,
+  getContent,
+  getAnalytics,
+  getLogs,
+  getAllFeedback,
+  getAdminStats
+} from "../controllers/adminController.js";
+import auth from "../middlewares/auth.js";
+import authorizeRoles from "../middlewares/roleCheck.js";
+
+const router = express.Router();
 
 // =============================
 // 🧩 Existing Admin-Protected Routes
@@ -12,7 +23,7 @@ router.put(
   "/algorithm/config",
   auth,
   authorizeRoles("admin"),
-  AdminController.updateConfig
+  updateConfig
 );
 
 // 🔄 Reindex content (Admin only)
@@ -20,7 +31,7 @@ router.post(
   "/content/reindex",
   auth,
   authorizeRoles("admin"),
-  AdminController.reindex
+  reindex
 );
 
 // =============================
@@ -32,7 +43,7 @@ router.get(
   "/users",
   auth,
   authorizeRoles("admin"),
-  AdminController.getUsers
+  getUsers
 );
 
 // 🎬 Get content data
@@ -40,7 +51,7 @@ router.get(
   "/content",
   auth,
   authorizeRoles("admin"),
-  AdminController.getContent
+  getContent
 );
 
 // 📊 Get analytics data
@@ -48,7 +59,7 @@ router.get(
   "/analytics",
   auth,
   authorizeRoles("admin"),
-  AdminController.getAnalytics
+  getAnalytics
 );
 
 // 🧾 Get system logs
@@ -56,7 +67,7 @@ router.get(
   "/logs",
   auth,
   authorizeRoles("admin"),
-  AdminController.getLogs
+  getLogs
 );
 
 // 📨 Get all feedback
@@ -64,18 +75,17 @@ router.get(
   "/feedback",
   auth,
   authorizeRoles("admin"),
-  AdminController.getAllFeedback
+  getAllFeedback
 );
 
 // =============================
 // 📈 Unified Stats Endpoint (Admin Dashboard)
 // =============================
-// This is the route your frontend dashboard calls for total counts.
 router.get(
   "/stats",
   auth,
   authorizeRoles("admin"),
-  AdminController.getAdminStats
+  getAdminStats
 );
 
-module.exports = router;
+export default router;

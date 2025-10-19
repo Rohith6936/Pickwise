@@ -1,22 +1,22 @@
-const AdminService = require("../services/adminService");
-const User = require("../models/User");
-const Content = require("../models/content");
-const Log = require("../models/Log"); // ✅ ensure Log model is imported
-const Feedback = require("../models/Feedback");
+import { updateConfig as updateConfigService, reindex as reindexService } from "../services/adminService.js";
+import User from "../models/User.js";
+import Content from "../models/content.js";
+import Log from "../models/Log.js"; // ✅ ensure Log model is imported
+import Feedback from "../models/Feedback.js";
 
 // ===== EXISTING (unchanged) =====
-exports.updateConfig = async (req, res, next) => {
+export const updateConfig = async (req, res, next) => {
   try {
-    const result = await AdminService.updateConfig(req.body);
+    const result = await updateConfigService(req.body);
     res.json(result);
   } catch (err) {
     next(err);
   }
 };
 
-exports.reindex = async (req, res, next) => {
+export const reindex = async (req, res, next) => {
   try {
-    const result = await AdminService.reindex();
+    const result = await reindexService();
     res.json(result);
   } catch (err) {
     next(err);
@@ -25,7 +25,7 @@ exports.reindex = async (req, res, next) => {
 
 // ===== NEW: dashboard endpoints (return raw data arrays/objects) =====
 
-exports.getUsers = async (req, res, next) => {
+export const getUsers = async (req, res, next) => {
   try {
     const users = await User.find({}, "email role status lastLogin createdAt").lean();
     return res.json(users);
@@ -35,7 +35,7 @@ exports.getUsers = async (req, res, next) => {
   }
 };
 
-exports.getContent = async (req, res, next) => {
+export const getContent = async (req, res, next) => {
   try {
     const content = await Content.find({}, "title type category status createdAt").lean();
     return res.json(content);
@@ -45,7 +45,7 @@ exports.getContent = async (req, res, next) => {
   }
 };
 
-exports.getAnalytics = async (req, res, next) => {
+export const getAnalytics = async (req, res, next) => {
   try {
     // Time ranges
     const now = new Date();
@@ -125,7 +125,7 @@ exports.getAnalytics = async (req, res, next) => {
   }
 };
 
-exports.getLogs = async (req, res, next) => {
+export const getLogs = async (req, res, next) => {
   try {
     // If you have a Log model, use it to show the latest system actions
     const logs = await Log.find({}).sort({ timestamp: -1 }).limit(20).lean();
@@ -139,7 +139,7 @@ exports.getLogs = async (req, res, next) => {
 // ==========================================
 // ✅ NEW: Feedback Management — list all feedback
 // ==========================================
-exports.getAllFeedback = async (req, res, next) => {
+export const getAllFeedback = async (req, res, next) => {
   try {
     const feedbacks = await Feedback.find({}).sort({ createdAt: -1 }).lean();
 
@@ -179,7 +179,7 @@ exports.getAllFeedback = async (req, res, next) => {
 // ==========================================
 // ✅ NEW: Unified Admin Stats (used by dashboard cards)
 // ==========================================
-exports.getAdminStats = async (req, res, next) => {
+export const getAdminStats = async (req, res, next) => {
   try {
     // 1️⃣ Total counts
     const totalUsers = await User.countDocuments();

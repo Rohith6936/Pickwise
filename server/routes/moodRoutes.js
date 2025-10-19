@@ -1,10 +1,9 @@
-/* eslint-disable no-undef */
-// server/routes/moodRoutes.js
-const express = require("express");
-const { getMoviesByMood } = require("../controllers/moodController");
+import express from "express";
+import { getMoviesByMood } from "../controllers/moodController.js";
 
 const router = express.Router();
 
+// 🎬 Get movies based on mood
 router.get("/:genre", getMoviesByMood);
 
-module.exports = router;
+export default router;

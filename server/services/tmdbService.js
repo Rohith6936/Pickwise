@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-const axios = require("axios");
+import axios from "axios";
 
 // 🎭 Mood → TMDB Genre Mapping
 const moodGenreMap = {
@@ -17,7 +17,7 @@ const moodGenreMap = {
 const getRandomItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 // ✅ TMDB API Function
-exports.fetchMoviesFromTMDB = async (mood) => {
+export const fetchMoviesFromTMDB = async (mood) => {
   try {
     const apiKey = process.env.TMDB_API_KEY;
     if (!apiKey) {

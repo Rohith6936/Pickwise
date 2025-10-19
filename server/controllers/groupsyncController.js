@@ -1,18 +1,18 @@
-const GroupService = require("../services/groupsyncService");
-const { ok } = require("../utils/responses");
+import { createGroup as createGroupService, getGroup as getGroupService } from "../services/groupsyncService.js";
+import { ok } from "../utils/responses.js";
 
-exports.createGroup = async (req, res, next) => {
+export const createGroup = async (req, res, next) => {
   try {
-    const result = await GroupService.createGroup(req.body);
+    const result = await createGroupService(req.body);
     res.json(ok(result));
   } catch (err) {
     next(err);
   }
 };
 
-exports.getGroup = async (req, res, next) => {
+export const getGroup = async (req, res, next) => {
   try {
-    const result = await GroupService.getGroup(req.params.sessionId);
+    const result = await getGroupService(req.params.sessionId);
     res.json(ok(result));
   } catch (err) {
     next(err);

@@ -1,10 +1,10 @@
-const UserService = require("../services/userService");
-const { ok } = require("../utils/responses");
+import { signup as signupService, login as loginService, savePreferences as savePreferencesService, getPreferences as getPreferencesService } from "../services/userService.js";
+import { ok } from "../utils/responses.js";
 
 // 🧩 User Signup
-exports.signup = async (req, res, next) => {
+export const signup = async (req, res, next) => {
   try {
-    const result = await UserService.signup(req.body);
+    const result = await signupService(req.body);
     res.status(201).json(ok(result));
   } catch (err) {
     next(err);
@@ -12,9 +12,9 @@ exports.signup = async (req, res, next) => {
 };
 
 // 🔐 User Login
-exports.login = async (req, res, next) => {
+export const login = async (req, res, next) => {
   try {
-    const token = await UserService.login(req.body);
+    const token = await loginService(req.body);
     res.json(ok({ token }));
   } catch (err) {
     next(err);
@@ -22,12 +22,12 @@ exports.login = async (req, res, next) => {
 };
 
 // 🎯 Save Preferences (movies / music / books)
-exports.savePreferences = async (req, res, next) => {
+export const savePreferences = async (req, res, next) => {
   try {
     const { email, type } = req.params; // type = "movies" | "music" | "books"
     const preferencesData = req.body;
 
-    const user = await UserService.savePreferences(email, type, preferencesData);
+    const user = await savePreferencesService(email, type, preferencesData);
     res.json(ok({ message: `${type} preferences saved`, preferences: user.preferences[type] }));
   } catch (err) {
     next(err);
@@ -35,10 +35,10 @@ exports.savePreferences = async (req, res, next) => {
 };
 
 // 🎯 Get Preferences (movies / music / books)
-exports.getPreferences = async (req, res, next) => {
+export const getPreferences = async (req, res, next) => {
   try {
     const { email, type } = req.params;
-    const preferences = await UserService.getPreferences(email, type);
+    const preferences = await getPreferencesService(email, type);
     res.json(ok({ preferences }));
   } catch (err) {
     next(err);

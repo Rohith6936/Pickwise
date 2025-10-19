@@ -1,9 +1,9 @@
 // ===============================================================
 // 📦 Imports & Setup
 // ===============================================================
-const axios = require("axios");
-const User = require("../models/User");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+import axios from "axios";
+import User from "../models/User.js";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -105,7 +105,7 @@ async function getMusicDetails(term) {
 // ===============================================================
 // 🎯  Single-Domain Recommendations
 // ===============================================================
-exports.getRecommendations = async (email, type = "movies") => {
+export const getRecommendations = async (email, type = "movies") => {
   try {
     const user = await User.findOne({ email });
     if (!user) throw new Error("User not found");
@@ -168,7 +168,7 @@ Return plain names, one per line.
 // ===============================================================
 // 🌍  Cross-Domain Recommendations
 // ===============================================================
-exports.getCrossDomainRecommendations = async (email, query = "romantic adventure") => {
+export const getCrossDomainRecommendations = async (email, query = "romantic adventure") => {
   try {
     console.log(`🌍 Generating cross-domain recs for: "${query}"`);
 

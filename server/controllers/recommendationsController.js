@@ -1,16 +1,16 @@
 // ===============================================================
 // 📦 Imports & Setup
 // ===============================================================
-const Recommendation = require("../models/Recommendation");
-const User = require("../models/User");
-const {
-  getRecommendations,
-  getCrossDomainRecommendations,
-} = require("../services/recommendationsService");
-const {
+import Recommendation from "../models/Recommendation.js";
+import User from "../models/User.js";
+import {
+  getRecommendations as getRecommendationsService,
+  getCrossDomainRecommendations as getCrossDomainRecommendationsService,
+} from "../services/recommendationsService.js";
+import {
   getAIRecommendationsWithExplanations,
   getGlobalFeatureImportances,
-} = require("../services/aiRecommenderService");
+} from "../services/aiRecommenderService.js";
 
 // Helper: generate a simple stable ID from title/type if no ID present
 function slugifyId(item, type) {
@@ -30,7 +30,7 @@ async function getUserPrefs(email) {
 // ===============================================================
 // 🎯 1️⃣ Fetch Single-Domain Recommendations (Movies, Books, Music)
 // ===============================================================
-exports.getRecommendations = async (req, res) => {
+export const getRecommendations = async (req, res) => {
   try {
     const { email, type } = req.params;
     const { explain } = req.query;
@@ -51,7 +51,7 @@ exports.getRecommendations = async (req, res) => {
     }
 
     // 🔍 Call the recommendation service to get candidate items
-    const data = await getRecommendations(email, type);
+    const data = await getRecommendationsService(email, type);
 
     if (!data || data.length === 0) {
       console.warn(`⚠️ No ${type} recommendations found for ${email}`);
@@ -111,7 +111,7 @@ exports.getRecommendations = async (req, res) => {
 // ===============================================================
 // 🔍 1.1 Query-based recommendations: GET /api/recommendations?email=...&type=movies&explain=true
 // ===============================================================
-exports.getRecommendationsQuery = async (req, res) => {
+export const getRecommendationsQuery = async (req, res) => {
   try {
     const { email, type = "movies", explain } = req.query;
     if (!email) {
@@ -122,7 +122,7 @@ exports.getRecommendationsQuery = async (req, res) => {
     }
     // Delegate to existing handler by faking params
     req.params = { email, type };
-    return exports.getRecommendations(req, res);
+    return getRecommendations(req, res);
   } catch (err) {
     console.error("❌ Query-based recommendations error:", err.message);
     res.status(500).json({ success: false, message: "Error" });
@@ -132,7 +132,7 @@ exports.getRecommendationsQuery = async (req, res) => {
 // ===============================================================
 // 🌍 2️⃣ Fetch Cross-Domain Recommendations (User Input or Preference)
 // ===============================================================
-exports.getCrossDomainRecommendations = async (req, res) => {
+export const getCrossDomainRecommendations = async (req, res) => {
   try {
     const { email } = req.params;
     const { base, query } = req.query; // user may provide `base` or `query`
@@ -160,7 +160,7 @@ exports.getCrossDomainRecommendations = async (req, res) => {
     console.log(`🌍 Cross-domain request for ${email} | ${source}`);
 
     // 🔍 Fetch AI results (Gemini + APIs)
-    const result = await getCrossDomainRecommendations(email, query || base);
+    const result = await getCrossDomainRecommendationsService(email, query || base);
 
     if (!result || !result.recommendations) {
       return res.status(200).json({
@@ -197,7 +197,7 @@ exports.getCrossDomainRecommendations = async (req, res) => {
 // ===============================================================
 // 📜 3️⃣ Fetch User Recommendation History
 // ===============================================================
-exports.getHistory = async (req, res) => {
+export const getHistory = async (req, res) => {
   try {
     const { email } = req.params;
     console.log("📩 Fetching history for:", email);
@@ -238,7 +238,7 @@ exports.getHistory = async (req, res) => {
 // ===============================================================
 // 🧠 4️⃣ Per-recommendation Explanation: GET /api/recommendations/:id/explain?email=<email>&type=movies
 // ===============================================================
-exports.getRecommendationExplanation = async (req, res) => {
+export const getRecommendationExplanation = async (req, res) => {
   try {
     const { id } = req.params;
     const { email, type = "movies" } = req.query;
@@ -260,7 +260,7 @@ exports.getRecommendationExplanation = async (req, res) => {
     }
 
     if (!found) {
-      const items = await getRecommendations(email, type);
+      const items = await getRecommendationsService(email, type);
       const withIds = (items || []).map((it) => ({ ...it, id: slugifyId(it, type) }));
       found = withIds.find((x) => String(x.id) === String(id));
       if (!found) {
@@ -280,7 +280,7 @@ exports.getRecommendationExplanation = async (req, res) => {
 // ===============================================================
 // 🌐 5️⃣ Global Feature Importances: GET /api/recommendations/global-explain?type=movies
 // ===============================================================
-exports.getGlobalExplanations = async (req, res) => {
+export const getGlobalExplanations = async (req, res) => {
   try {
     const { type = "movies" } = req.query;
     if (!["movies", "books", "music"].includes(type)) {

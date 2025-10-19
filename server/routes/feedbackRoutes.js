@@ -1,6 +1,5 @@
-// server/routes/feedbackRoutes.js
-const express = require("express");
-const Feedback = require("../models/Feedback");
+import express from "express";
+import Feedback from "../models/Feedback.js";
 
 const router = express.Router();
 
@@ -47,4 +46,4 @@ router.get("/:contentId/reviews", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

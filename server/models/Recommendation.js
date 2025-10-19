@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const RecommendationSchema = new mongoose.Schema({
   email: { type: String, required: true },
@@ -19,4 +19,4 @@ const RecommendationSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.model("Recommendation", RecommendationSchema);
+export default mongoose.model("Recommendation", RecommendationSchema);

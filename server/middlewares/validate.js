@@ -1,4 +1,4 @@
-const { body, validationResult } = require("express-validator");
+import { body, validationResult } from "express-validator";
 
 const validateSignup = [
   body("email").isEmail(),
@@ -12,4 +12,4 @@ const validateSignup = [
   },
 ];
 
-module.exports = { validateSignup };
+export { validateSignup };

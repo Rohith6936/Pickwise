@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const BlendRequestSchema = new mongoose.Schema({
   requesterEmail: { type: String, required: true },
@@ -10,4 +10,4 @@ const BlendRequestSchema = new mongoose.Schema({
   acceptedAt: { type: Date },
 });
 
-module.exports = mongoose.model("BlendRequest", BlendRequestSchema);
+export default mongoose.model("BlendRequest", BlendRequestSchema);

@@ -1,7 +1,8 @@
-const express = require("express");
+import express from "express";
+import User from "../models/User.js";
+import auth from "../middlewares/auth.js";
+
 const router = express.Router();
-const User = require("../models/User");
-const auth = require("../middlewares/auth");
 
 // 🎯 Save or update preferences for movies, books, or music
 router.post("/preferences/:email/:type", auth, async (req, res) => {
@@ -144,4 +145,4 @@ router.get("/preferences/:email/music", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

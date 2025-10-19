@@ -1,11 +1,11 @@
 // server/services/chatService.js
-const https = require("https");
+import https from "https";
 
 /**
  * Chat service for movie recommendations
  * Using TMDB API through corsproxy.io (stable relay)
  */
-exports.chat = async ({ message }) => {
+export const chat = async ({ message }) => {
   try {
     const query = message
       .replace(/recommend|suggest|give|show|find|list|movies|movie|films|like|based on/gi, "")

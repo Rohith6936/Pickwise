@@ -6,4 +6,4 @@ function cosineSimilarity(a, b) {
   return dot / (magA * magB);
 }
 
-module.exports = { cosineSimilarity };
+export { cosineSimilarity };

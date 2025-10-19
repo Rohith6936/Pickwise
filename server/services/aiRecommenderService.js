@@ -1,6 +1,6 @@
 // server/services/aiRecommenderService.js
 // XAI additions: explanation generation and global feature importances with light caching.
-const { cosineSimilarity } = require("../utils/mathUtils");
+import { cosineSimilarity } from "../utils/mathUtils.js";
 
 let embeddingPipelinePromise = null;
 async function getLocalEmbedder() {
@@ -257,7 +257,7 @@ async function getGlobalFeatureImportances(items, type, topN = 20) {
   return { type, top_terms: top, summary };
 }
 
-module.exports = {
+export {
   getEmbedding,
   getAIRecommendations,
   getAIRecommendationsWithExplanations,
