@@ -64,16 +64,50 @@ app.use((req, res, next) => {
 });
 
 // =====================================================
-// 📧 EMAIL CONFIGURATION — Resend + SMTP (Auto-Fallback)
+// 📧 EMAIL CONFIGURATION — Resend SMTP → Resend API (Fallback)
 // =====================================================
-let sendEmail; // function used to send emails
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 
-// --- Option 1: Use Resend ---
-if (process.env.RESEND_API_KEY) {
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  sendEmail = async (to, subject, text, html = null) => {
-    const fromAddress =
-      process.env.RESEND_FROM || "PickWise <onboarding@resend.dev>";
+// --- Resend SMTP setup (primary)
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || "smtp.resend.com",
+  port: Number(process.env.SMTP_PORT || 465),
+  secure: Number(process.env.SMTP_PORT || 465) === 465,
+  auth: {
+    user: process.env.SMTP_USER || "resend",
+    pass: process.env.SMTP_PASS,
+  },
+});
+
+transporter.verify((err, success) => {
+  if (err) console.error("⚠ Resend SMTP connection failed:", err.message);
+  else console.log("✅ Resend SMTP transporter ready");
+});
+
+// --- Smart sendEmail() with fallback ---
+async function sendEmail(to, subject, text, html = null) {
+  const fromAddress =
+    process.env.RESEND_FROM || "PickWise <onboarding@resend.dev>";
+
+  // Step 1️⃣ → Try Resend SMTP first
+  try {
+    await transporter.sendMail({
+      from: fromAddress,
+      to,
+      subject,
+      text,
+      html,
+    });
+    console.log(`✅ Email sent via Resend SMTP to ${to}`);
+    return;
+  } catch (smtpErr) {
+    console.error("❌ Resend SMTP failed:", smtpErr.message);
+  }
+
+  // Step 2️⃣ → If SMTP fails, try Resend API
+  if (resend) {
     try {
       await resend.emails.send({
         from: fromAddress,
@@ -82,61 +116,15 @@ if (process.env.RESEND_API_KEY) {
         text,
         html,
       });
-      console.log(`✅ Email sent via Resend to ${to}`);
-    } catch (err) {
-      console.error("❌ Resend email failed:", err?.message || err);
-      throw new Error("Resend email delivery failed");
+      console.log(`✅ Email sent via Resend API to ${to}`);
+      return;
+    } catch (apiErr) {
+      console.error("❌ Resend API also failed:", apiErr.message);
     }
-  };
-  console.log("📨 Email provider: Resend");
-}
+  }
 
-// --- Option 2: Use SMTP if Resend not available ---
-if (!sendEmail && process.env.SMTP_USER && process.env.SMTP_PASS) {
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: Number(process.env.SMTP_PORT || 587) === 465,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-
-  transporter.verify((err, success) => {
-    if (err) {
-      console.error("⚠ SMTP connection failed:", err.message);
-    } else {
-      console.log("✅ SMTP transporter ready");
-    }
-  });
-
-  sendEmail = async (to, subject, text, html = null) => {
-    try {
-      await transporter.sendMail({
-        from: process.env.SMTP_USER,
-        to,
-        subject,
-        text,
-        html,
-      });
-      console.log(`✅ Email sent via SMTP to ${to}`);
-    } catch (err) {
-      console.error("❌ SMTP email failed:", err.message);
-      throw new Error("SMTP email delivery failed");
-    }
-  };
-  console.log("📨 Email provider: SMTP");
-}
-
-// --- Fallback if neither provider is configured ---
-if (!sendEmail) {
-  console.warn(
-    "⚠ No email provider configured. Set either RESEND_API_KEY or SMTP_USER/SMTP_PASS."
-  );
-  sendEmail = async () => {
-    throw new Error("Email service not configured");
-  };
+  // Step 3️⃣ → If both fail
+  throw new Error("Email delivery failed (SMTP + API both failed)");
 }
 
 // =====================================================
@@ -193,7 +181,7 @@ app.post("/api/send-otp", async (req, res) => {
     );
 
     console.log(`✅ OTP sent to ${email}: ${otp}`);
-    res.json({ ok: true, message: "OTP sent to email" });
+    res.json({ ok: true, message: "OTP sent successfully" });
   } catch (err) {
     console.error("❌ send-otp error:", err.message);
     res.status(500).json({ error: "Failed to send OTP" });
@@ -249,7 +237,7 @@ app.use(errorHandler);
 // 🌍 HEALTH CHECK ENDPOINT (important for Render)
 // =====================================================
 app.get("/", (req, res) => {
-  res.send("✅ PickWise Backend is running successfully");
+  res.send("✅ PickWise Backend running with Resend SMTP → API fallback");
 });
 
 // =====================================================
