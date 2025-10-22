@@ -10,14 +10,9 @@ import {
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ChatFloatingButton from "./components/ChatFloatingButton";
-import NavigationButtons from "./components/NavigationButtons";
-import AdminNavbar from "./components/AdminNavbar";
 
 // ===== Core Pages =====
 import Home from "./pages/Home";
-import AboutUs from "./pages/AboutUs";
-import ContactUs from "./pages/ContactUs";
-import UserGuide from "./pages/UserGuide";
 import GroupSync from "./pages/GroupSync";
 import Moodboard from "./pages/Moodboard";
 import MoodMovies from "./pages/MoodMovies";
@@ -49,7 +44,7 @@ import RecommendationsHub from "./pages/RecommendationsHub";
 import UsersPage from "./pages/Admin/UserPage";
 import AnalyticsPage from "./pages/Admin/AnalyticsPage";
 import FeedbackPage from "./pages/Admin/FeedbackPage";
-import ContactsPage from "./pages/Admin/ContactsPage";
+import ContactsPage from "./pages/Admin/ContactsPage"; // ✅ FIXED — added back
 
 // ===== Splash Screen =====
 import SplashScreen from "./pages/SplashScreen";
@@ -73,7 +68,7 @@ function AppContent() {
     setSelectedCategory(savedCategory);
   }, [location.pathname]);
 
-  // 🧭 Routes where Navbar & Chatbot are hidden
+  // 🧭 Routes where Navbar and Chatbot should be hidden
   const hideNavbarRoutes = [
     "/login",
     "/signup",
@@ -83,7 +78,7 @@ function AppContent() {
     "/admin/users",
     "/admin/analytics",
     "/admin/feedback",
-    "/admin/contacts",
+    "/admin/contacts", // ✅ added
     "/book-preferences",
     "/books/wishlist",
     "/music-preferences",
@@ -102,10 +97,9 @@ function AppContent() {
     "/admin/users",
     "/admin/analytics",
     "/admin/feedback",
-    "/admin/contacts",
+    "/admin/contacts", // ✅ added
   ];
 
-  const hideNavButtons = location.pathname.startsWith("/admin");
   const hideNavbar = hideNavbarRoutes.includes(location.pathname);
   const hideChatbotButton = hideChatbotRoutes.includes(location.pathname);
   const isChoosePage = location.pathname === "/choose";
@@ -125,9 +119,6 @@ function AppContent() {
 
   return (
     <div className="app">
-      {/* 🧭 Admin Navbar */}
-      {location.pathname.startsWith("/admin") && <AdminNavbar />}
-
       {/* 🎥 Background Video */}
       <video autoPlay loop muted playsInline className="background-video">
         <source src="/bg.mp4" type="video/mp4" />
@@ -145,13 +136,10 @@ function AppContent() {
 
           {/* 🌍 Public Pages */}
           <Route path="/home" element={<Home />} />
-          <Route path="/about" element={<AboutUs />} />
-          <Route path="/contact" element={<ContactUs />} />
-          <Route path="/guide" element={<UserGuide />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
 
-          {/* 🧭 Choose Category */}
+          {/* 🧭 Category Selection */}
           <Route
             path="/choose"
             element={
@@ -161,7 +149,7 @@ function AppContent() {
             }
           />
 
-          {/* 🎬 Movie Preferences */}
+          {/* 🎬 Movies */}
           <Route
             path="/preferences"
             element={
@@ -171,7 +159,7 @@ function AppContent() {
             }
           />
 
-          {/* 📚 Book Preferences */}
+          {/* 📚 Books */}
           <Route
             path="/book-preferences"
             element={
@@ -197,7 +185,7 @@ function AppContent() {
             }
           />
 
-          {/* 🎵 Music Preferences */}
+          {/* 🎵 Music */}
           <Route
             path="/music-preferences"
             element={
@@ -244,7 +232,7 @@ function AppContent() {
             }
           />
 
-          {/* 🎭 Mood-Based Movies */}
+          {/* 🎭 Mood-Based */}
           <Route
             path="/moodboard"
             element={
@@ -262,7 +250,7 @@ function AppContent() {
             }
           />
 
-          {/* 🔁 Shared Authenticated Pages */}
+          {/* 🔁 Shared Auth Routes */}
           <Route
             path="/feedback"
             element={
@@ -314,7 +302,7 @@ function AppContent() {
             }
           />
 
-          {/* 🛠️ Admin Dashboard */}
+          {/* 🛠️ Admin Dashboard & Subpages */}
           <Route
             path="/admin"
             element={
@@ -359,9 +347,6 @@ function AppContent() {
           {/* 🧭 Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-
-        {/* 🔄 Forward / Backward Navigation */}
-        {!hideNavButtons && <NavigationButtons />}
       </main>
 
       {/* 💬 Floating Chat Button */}
