@@ -74,70 +74,122 @@ app.use((req, res, next) => {
   next();
 });
 
+// // =====================================================
+// // 📧 EMAIL CONFIGURATION — Resend + SMTP (Auto-Fallback)
+// // =====================================================
+// let sendEmail;
+
+// if (process.env.RESEND_API_KEY) {
+//   const resend = new Resend(process.env.RESEND_API_KEY);
+//   sendEmail = async (to, subject, text, html = null) => {
+//     const fromAddress =
+//       process.env.RESEND_FROM || "PickWise <onboarding@resend.dev>";
+//     try {
+//       await resend.emails.send({ from: fromAddress, to, subject, text, html });
+//       console.log(`✅ Email sent via Resend to ${to}`);
+//     } catch (err) {
+//       console.error("❌ Resend email failed:", err?.message || err);
+//       throw new Error("Resend email delivery failed");
+//     }
+//   };
+//   console.log("📨 Email provider: Resend");
+// }
+
+// if (!sendEmail && process.env.SMTP_USER && process.env.SMTP_PASS) {
+//   const transporter = nodemailer.createTransport({
+//     host: process.env.SMTP_HOST || "smtp.gmail.com",
+//     port: Number(process.env.SMTP_PORT || 587),
+//     secure: Number(process.env.SMTP_PORT || 587) === 465,
+//     auth: {
+//       user: process.env.SMTP_USER,
+//       pass: process.env.SMTP_PASS,
+//     },
+//   });
+
+//   transporter.verify((err, success) => {
+//     if (err) {
+//       console.error("⚠ SMTP connection failed:", err.message);
+//     } else {
+//       console.log("✅ SMTP transporter ready");
+//     }
+//   });
+
+//   sendEmail = async (to, subject, text, html = null) => {
+//     try {
+//       await transporter.sendMail({
+//         from: process.env.SMTP_USER,
+//         to,
+//         subject,
+//         text,
+//         html,
+//       });
+//       console.log(`✅ Email sent via SMTP to ${to}`);
+//     } catch (err) {
+//       console.error("❌ SMTP email failed:", err.message);
+//       throw new Error("SMTP email delivery failed");
+//     }
+//   };
+//   console.log("📨 Email provider: SMTP");
+// }
+
+// if (!sendEmail) {
+//   console.warn(
+//     "⚠ No email provider configured. Set either RESEND_API_KEY or SMTP_USER/SMTP_PASS."
+//   );
+//   sendEmail = async () => {
+//     throw new Error("Email service not configured");
+//   };
+// }
+
 // =====================================================
-// 📧 EMAIL CONFIGURATION — Resend + SMTP (Auto-Fallback)
+// 📧 EMAIL CONFIGURATION — SendGrid (API-based)
 // =====================================================
+import fetch from "node-fetch";
+
 let sendEmail;
 
-if (process.env.RESEND_API_KEY) {
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  sendEmail = async (to, subject, text, html = null) => {
-    const fromAddress =
-      process.env.RESEND_FROM || "PickWise <onboarding@resend.dev>";
-    try {
-      await resend.emails.send({ from: fromAddress, to, subject, text, html });
-      console.log(`✅ Email sent via Resend to ${to}`);
-    } catch (err) {
-      console.error("❌ Resend email failed:", err?.message || err);
-      throw new Error("Resend email delivery failed");
-    }
-  };
-  console.log("📨 Email provider: Resend");
-}
-
-if (!sendEmail && process.env.SMTP_USER && process.env.SMTP_PASS) {
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: Number(process.env.SMTP_PORT || 587) === 465,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-
-  transporter.verify((err, success) => {
-    if (err) {
-      console.error("⚠ SMTP connection failed:", err.message);
-    } else {
-      console.log("✅ SMTP transporter ready");
-    }
-  });
-
+if (process.env.SENDGRID_API_KEY) {
   sendEmail = async (to, subject, text, html = null) => {
     try {
-      await transporter.sendMail({
-        from: process.env.SMTP_USER,
-        to,
-        subject,
-        text,
-        html,
+      const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.SENDGRID_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          personalizations: [{ to: [{ email: to }], subject }],
+          from: {
+            email: process.env.SENDGRID_FROM || "pickwise520@gmail.com",
+            name: "PickWise System",
+          },
+          content: [
+            {
+              type: html ? "text/html" : "text/plain",
+              value: html || text,
+            },
+          ],
+        }),
       });
-      console.log(`✅ Email sent via SMTP to ${to}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ SendGrid send failed:", errorText);
+        throw new Error(`SendGrid Error: ${response.statusText}`);
+      }
+
+      console.log(`✅ Email sent via SendGrid to ${to}`);
     } catch (err) {
-      console.error("❌ SMTP email failed:", err.message);
-      throw new Error("SMTP email delivery failed");
+      console.error("❌ SendGrid email error:", err.message);
+      throw new Error("SendGrid email delivery failed");
     }
   };
-  console.log("📨 Email provider: SMTP");
-}
 
-if (!sendEmail) {
-  console.warn(
-    "⚠ No email provider configured. Set either RESEND_API_KEY or SMTP_USER/SMTP_PASS."
-  );
+  console.log("📨 Email provider: SendGrid");
+} else {
+  console.warn("⚠ No SendGrid API key found. Email service disabled.");
   sendEmail = async () => {
-    throw new Error("Email service not configured");
+    throw new Error("SendGrid not configured");
   };
 }
 
