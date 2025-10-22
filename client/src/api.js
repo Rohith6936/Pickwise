@@ -168,6 +168,28 @@ export const reindexContent = (data) =>
   API.post("/admin/content/reindex", data);
 
 // =====================================================
+// 📨 CONTACT ADMIN MANAGEMENT (✅ NEWLY ADDED)
+// =====================================================
+
+// Get all contact messages (admin/dev)
+export const getAdminContacts = async () => {
+  const res = await API.get("/contact/admin-list");
+  return res.data;
+};
+
+// Send a reply to a specific contact message
+export const replyToContact = async (id, replyMessage) => {
+  const res = await API.post(`/admin/contact/reply/${id}`, { replyMessage });
+  return res.data;
+};
+
+// Update status of a specific contact message
+export const updateContactStatus = async (id, status) => {
+  const res = await API.patch(`/admin/contact/status/${id}`, { status });
+  return res.data;
+};
+
+// =====================================================
 // 💬 CHAT
 // =====================================================
 export const sendMessage = (message) =>
@@ -177,7 +199,9 @@ export const sendMessage = (message) =>
 // 🎥 TMDB SEARCH
 // =====================================================
 export const searchMovies = async (query) => {
-  const res = await fetch(`${API_BASE_URL}/api/tmdb?q=${encodeURIComponent(query)}`);
+  const res = await fetch(
+    `${API_BASE_URL}/api/tmdb?q=${encodeURIComponent(query)}`
+  );
   return res.json();
 };
 
