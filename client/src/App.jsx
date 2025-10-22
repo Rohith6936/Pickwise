@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useEffect, useState } from "react";
 import {
   BrowserRouter as Router,
@@ -76,16 +75,34 @@ function AppContent() {
 
   // 🧭 Routes where Navbar & Chatbot are hidden
   const hideNavbarRoutes = [
-    "/login", "/signup", "/", "/choose", "/admin", "/admin/users", "/admin/analytics",
-    "/admin/feedback", "/admin/contacts", "/book-preferences", "/books/wishlist",
-    "/music-preferences", "/music/artist", "/music/popularity", "/music/blend",
-    "/recommendations-hub"
+    "/login",
+    "/signup",
+    "/",
+    "/choose",
+    "/admin",
+    "/admin/users",
+    "/admin/analytics",
+    "/admin/feedback",
+    "/admin/contacts",
+    "/book-preferences",
+    "/books/wishlist",
+    "/music-preferences",
+    "/music/artist",
+    "/music/popularity",
+    "/music/blend",
+    "/recommendations-hub",
   ];
 
   const hideChatbotRoutes = [
-    "/", "/login", "/signup", "/chat",
-    "/admin", "/admin/users", "/admin/analytics",
-    "/admin/feedback", "/admin/contacts"
+    "/",
+    "/login",
+    "/signup",
+    "/chat",
+    "/admin",
+    "/admin/users",
+    "/admin/analytics",
+    "/admin/feedback",
+    "/admin/contacts",
   ];
 
   const hideNavButtons = location.pathname.startsWith("/admin");
@@ -109,7 +126,7 @@ function AppContent() {
   return (
     <div className="app">
       {/* 🧭 Admin Navbar */}
-      {location.pathname === "/admin" && <AdminNavbar />}
+      {location.pathname.startsWith("/admin") && <AdminNavbar />}
 
       {/* 🎥 Background Video */}
       <video autoPlay loop muted playsInline className="background-video">
@@ -343,7 +360,7 @@ function AppContent() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
 
-        {/* 🔄 Forward / Backward Buttons */}
+        {/* 🔄 Forward / Backward Navigation */}
         {!hideNavButtons && <NavigationButtons />}
       </main>
 
