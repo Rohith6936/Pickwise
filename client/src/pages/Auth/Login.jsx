@@ -1,3 +1,4 @@
+// src/pages/Auth/Login.jsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { login, getPreferences } from "../../api";
@@ -7,7 +8,7 @@ function Login() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false); // ✅ Add loading state for better UX
+  const [loading, setLoading] = useState(false); // ✅ Loading indicator
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -21,13 +22,13 @@ function Login() {
     try {
       // ✅ 1. Authenticate user
       const res = await login(form);
-      const { token, user } = res.data;
+      const { token, user } = res.data || {};
 
       if (!token || !user) {
-        throw new Error("Invalid login response");
+        throw new Error("Invalid login response from server");
       }
 
-      // ✅ 2. Save token and user info
+      // ✅ 2. Save authentication info
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
       localStorage.setItem("userEmail", user.email);
@@ -35,29 +36,29 @@ function Login() {
       const email = user.email;
       const role = user.role || "user";
 
-      // ✅ 3. Redirect admin users
+      // ✅ 3. Redirect admin users immediately
       if (role === "admin") {
         navigate("/admin");
         return;
       }
 
-      // ✅ 4. Check if preferences exist in localStorage
+      // ✅ 4. Check for locally saved preferences
       const localPrefs = localStorage.getItem(`preferences_${email}`);
       if (localPrefs) {
-        navigate("/Choose");
+        navigate("/choose");
         return;
       }
 
-      // ✅ 5. Fetch preferences from backend
+      // ✅ 5. Fetch preferences from backend if not found locally
       try {
         const prefsRes = await getPreferences(email);
-        const prefs = prefsRes.data;
+        const prefs = prefsRes?.data?.data || prefsRes?.data || {};
 
-        if (prefs && prefs.genres?.length > 0) {
+        if (prefs?.genres?.length > 0) {
           localStorage.setItem(`preferences_${email}`, JSON.stringify(prefs));
           navigate("/dashboard");
         } else {
-          navigate("/Choose");
+          navigate("/choose");
         }
       } catch (err) {
         console.error("❌ Error fetching preferences:", err);
@@ -65,7 +66,11 @@ function Login() {
       }
     } catch (err) {
       console.error("❌ Login failed:", err);
-      setError("Invalid email or password. Please try again.");
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Invalid email or password. Please try again.";
+      setError(msg);
     } finally {
       setLoading(false);
     }

@@ -11,9 +11,14 @@ import {
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ChatFloatingButton from "./components/ChatFloatingButton";
+import NavigationButtons from "./components/NavigationButtons";
+import AdminNavbar from "./components/AdminNavbar";
 
 // ===== Core Pages =====
 import Home from "./pages/Home";
+import AboutUs from "./pages/AboutUs";
+import ContactUs from "./pages/ContactUs";
+import UserGuide from "./pages/UserGuide";
 import GroupSync from "./pages/GroupSync";
 import Moodboard from "./pages/Moodboard";
 import MoodMovies from "./pages/MoodMovies";
@@ -45,9 +50,10 @@ import RecommendationsHub from "./pages/RecommendationsHub";
 import UsersPage from "./pages/Admin/UserPage";
 import AnalyticsPage from "./pages/Admin/AnalyticsPage";
 import FeedbackPage from "./pages/Admin/FeedbackPage";
+import ContactsPage from "./pages/Admin/ContactsPage";
 
-// ===== New Splash Screen =====
-import SplashScreen from "./pages/SplashScreen"; // ✅ added
+// ===== Splash Screen =====
+import SplashScreen from "./pages/SplashScreen";
 
 import "./styles/App.css";
 
@@ -68,10 +74,21 @@ function AppContent() {
     setSelectedCategory(savedCategory);
   }, [location.pathname]);
 
-  // 🧭 Routes to hide Navbar and Chatbot
-  const hideNavbarRoutes = ["/login", "/signup", "/","/choose", "/admin", "/admin/users", "/admin/analytics", "/admin/feedback", "/Choose", "/book-preferences", "/books/wishlist", "/music-preferences","/music/artist", "/music/popularity", "/music/blend", "/recommendations-hub"];
-  const hideChatbotRoutes = ["/", "/login", "/signup", "/chat", "/admin", "/admin/users", "/admin/analytics", "/admin/feedback", "/Choose"];
+  // 🧭 Routes where Navbar & Chatbot are hidden
+  const hideNavbarRoutes = [
+    "/login", "/signup", "/", "/choose", "/admin", "/admin/users", "/admin/analytics",
+    "/admin/feedback", "/admin/contacts", "/book-preferences", "/books/wishlist",
+    "/music-preferences", "/music/artist", "/music/popularity", "/music/blend",
+    "/recommendations-hub"
+  ];
 
+  const hideChatbotRoutes = [
+    "/", "/login", "/signup", "/chat",
+    "/admin", "/admin/users", "/admin/analytics",
+    "/admin/feedback", "/admin/contacts"
+  ];
+
+  const hideNavButtons = location.pathname.startsWith("/admin");
   const hideNavbar = hideNavbarRoutes.includes(location.pathname);
   const hideChatbotButton = hideChatbotRoutes.includes(location.pathname);
   const isChoosePage = location.pathname === "/choose";
@@ -86,12 +103,14 @@ function AppContent() {
       showOnlyLogout = true;
     } else if (selectedCategory) {
       showNavbar = true;
-      showOnlyLogout = false;
     }
   }
 
   return (
     <div className="app">
+      {/* 🧭 Admin Navbar */}
+      {location.pathname === "/admin" && <AdminNavbar />}
+
       {/* 🎥 Background Video */}
       <video autoPlay loop muted playsInline className="background-video">
         <source src="/bg.mp4" type="video/mp4" />
@@ -104,11 +123,14 @@ function AppContent() {
 
       <main className="main-content">
         <Routes>
-          {/* 🌟 Splash Screen Route (2-sec fade, then redirect to signup) */}
+          {/* 🌟 Splash Screen */}
           <Route path="/" element={<SplashScreen />} />
 
-          {/* 🌍 Public Routes */}
+          {/* 🌍 Public Pages */}
           <Route path="/home" element={<Home />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/contact" element={<ContactUs />} />
+          <Route path="/guide" element={<UserGuide />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
 
@@ -132,7 +154,7 @@ function AppContent() {
             }
           />
 
-          {/* 📚 Book Preferences & Pages */}
+          {/* 📚 Book Preferences */}
           <Route
             path="/book-preferences"
             element={
@@ -158,7 +180,7 @@ function AppContent() {
             }
           />
 
-          {/* 🎵 Music Preferences & Pages */}
+          {/* 🎵 Music Preferences */}
           <Route
             path="/music-preferences"
             element={
@@ -223,7 +245,7 @@ function AppContent() {
             }
           />
 
-          {/* 🔁 Shared Authenticated Routes */}
+          {/* 🔁 Shared Authenticated Pages */}
           <Route
             path="/feedback"
             element={
@@ -275,7 +297,7 @@ function AppContent() {
             }
           />
 
-          {/* 🛠️ Admin Dashboard & Subpages */}
+          {/* 🛠️ Admin Dashboard */}
           <Route
             path="/admin"
             element={
@@ -308,10 +330,21 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/admin/contacts"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <ContactsPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* 🧭 Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+
+        {/* 🔄 Forward / Backward Buttons */}
+        {!hideNavButtons && <NavigationButtons />}
       </main>
 
       {/* 💬 Floating Chat Button */}

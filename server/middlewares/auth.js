@@ -1,9 +1,18 @@
+// server/middlewares/auth.js
 import jwt from "jsonwebtoken";
 
+const SECRET = process.env.JWT_SECRET || "dev-secret";
+
+/**
+ * 🔐 Auth Middleware
+ * - Extracts token from the "Authorization" header
+ * - Verifies JWT token using SECRET
+ * - Adds decoded user info to req.user
+ */
 const authMiddleware = (req, res, next) => {
-  // 1️⃣ Get token from header
+  // 1️⃣ Get token from Authorization header ("Bearer <token>")
   const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1]; // Expect: "Bearer <token>"
+  const token = authHeader && authHeader.split(" ")[1];
 
   if (!token) {
     return res.status(401).json({ message: "No token provided" });
@@ -11,16 +20,17 @@ const authMiddleware = (req, res, next) => {
 
   // 2️⃣ Verify token
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, SECRET);
 
-    // decoded includes both id and role (from login)
+    // ✅ Attach decoded user info to request object
     req.user = {
       id: decoded.id,
       role: decoded.role || "user",
     };
 
-    next(); // Pass control to next middleware/route
+    next(); // Continue to the next middleware or route
   } catch (err) {
+    console.error("❌ Token verification failed:", err.message);
     return res.status(403).json({ message: "Invalid or expired token" });
   }
 };

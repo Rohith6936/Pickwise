@@ -1,7 +1,10 @@
+// finalworking/p6/client/src/pages/ChooseCategoryPage.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/ChooseCategoryPage.css";
-import { FaFilm, FaBookOpen, FaMusic, FaRobot } from "react-icons/fa";
+import "../styles/App.css"; // for FAB and button styles
+import { FaFilm, FaBookOpen, FaMusic, FaRobot, FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import Navbar from "../components/Navbar";
 
 const ChooseCategoryPage = () => {
   const navigate = useNavigate();
@@ -13,12 +16,21 @@ const ChooseCategoryPage = () => {
     else if (type === "music") navigate("/music-preferences");
   };
 
+  // Navigation buttons
+  const goBack = () => navigate(-1);
+  const goForward = () => navigate(1);
+
   return (
     <div className="choose-container">
+      {/* 🌐 Top Navigation Bar */}
+      <Navbar />
+
+      {/* 🧠 Main Title */}
       <h1 className="choose-title">
         What would you like recommendations for today?
       </h1>
 
+      {/* 🎬 Category Cards */}
       <div className="card-grid">
         <div className="category-card" onClick={() => handleChoice("movies")}>
           <FaFilm className="card-icon movie-icon" />
@@ -38,7 +50,7 @@ const ChooseCategoryPage = () => {
           <p>Listen to popular hits, timeless tunes, and hidden melodies.</p>
         </div>
 
-        {/* 🧠 New Smart Recommendations Card */}
+        {/* 🧠 Smart Recommendations */}
         <div
           className="category-card smart-card"
           onClick={() => navigate("/recommendations-hub")}
@@ -50,6 +62,16 @@ const ChooseCategoryPage = () => {
             preferences.
           </p>
         </div>
+      </div>
+
+      {/* 🔄 Forward/Backward Navigation Buttons */}
+      <div className="nav-fab">
+        <button className="fab-btn fab-secondary" onClick={goBack} title="Go Back">
+          <FaArrowLeft />
+        </button>
+        <button className="fab-btn fab-primary" onClick={goForward} title="Go Forward">
+          <FaArrowRight />
+        </button>
       </div>
     </div>
   );

@@ -14,23 +14,32 @@ function UserDashboard() {
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
 
-      // ✅ Fetch preferences
+      // ✅ Fetch preferences with safe fallback
       getPreferences(parsedUser.email)
         .then((res) => {
-          setPreferences(res.data);
+          const prefs = res?.data ?? null;
+          setPreferences(prefs);
         })
-        .catch(() => {
+        .catch((err) => {
+          console.error("❌ Preferences fetch error:", err);
           setMessage("❌ Failed to fetch preferences");
         });
 
-      // ✅ Fetch recommendations
+      // ✅ Fetch recommendations with robust data structure handling
       getRecommendations(parsedUser.email)
         .then((res) => {
-          const recs = res.data.recommendations || res.data;
+          const data = res?.data ?? [];
+          const recs = Array.isArray(data?.recommendations)
+            ? data.recommendations
+            : Array.isArray(data)
+            ? data
+            : [];
           setRecommendations(recs);
         })
-        .catch(() => {
+        .catch((err) => {
+          console.error("❌ Recommendations fetch error:", err);
           setMessage("❌ Failed to fetch recommendations");
+          setRecommendations([]);
         });
     }
   }, []);
@@ -56,10 +65,12 @@ function UserDashboard() {
       )}
 
       <h3>🎬 Recommendations for You</h3>
-      {recommendations.length > 0 ? (
+      {Array.isArray(recommendations) && recommendations.length > 0 ? (
         <ul>
-          {recommendations.map((movie, index) => (
-            <li key={index}>{movie}</li>
+          {recommendations.map((item, index) => (
+            <li key={index}>
+              {typeof item === "string" ? item : JSON.stringify(item)}
+            </li>
           ))}
         </ul>
       ) : (

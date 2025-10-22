@@ -1,28 +1,42 @@
-/* Complete App.css with Option 3: Sophisticated Green & Teal */
+/* ==========================================================================
+   🎨 APP GLOBAL STYLES — Sophisticated Green & Teal Theme
+   Includes optional commented themes for future use
+   ========================================================================== */
 
-/* Color Variables - Updated for Netflix Red Theme */
+/* Color Variables */
 :root {
-  --primary-color: #e50914; /* Netflix red */
-  --secondary-color: #f40612; /* Brighter red */
+  /* 🟢 Active Theme: Sophisticated Green & Teal */
+  --primary-color: #059669;
+  --secondary-color: #0d9488;
+  --accent-color: #ecfdf5;
+  --text-primary: #ffffff;
+  --text-secondary: #d1fae5;
+  --background-overlay: rgba(6, 20, 15, 0.8);
+
+  /* 🔴 Optional: Netflix Red Theme */
+  /*
+  --primary-color: #e50914;
+  --secondary-color: #f40612;
   --accent-color: #ffffff;
   --text-primary: #ffffff;
   --text-secondary: #b3b3b3;
   --background-overlay: rgba(0, 0, 0, 0.75);
-  
-  /* Alternative: Modern Purple Theme */
+  */
+
+  /* 🟣 Optional: Modern Purple Theme */
   /*
-  --primary-color: #6366f1; 
-  --secondary-color: #8b5cf6; 
+  --primary-color: #6366f1;
+  --secondary-color: #8b5cf6;
   --accent-color: #f8fafc;
   --text-primary: #ffffff;
   --text-secondary: #cbd5e1;
   --background-overlay: rgba(15, 23, 42, 0.8);
   */
-  
-  /* Alternative: Vibrant Blue Theme */
+
+  /* 🔵 Optional: Vibrant Blue Theme */
   /*
-  --primary-color: #0ea5e9; 
-  --secondary-color: #0284c7; 
+  --primary-color: #0ea5e9;
+  --secondary-color: #0284c7;
   --accent-color: #f0f9ff;
   --text-primary: #ffffff;
   --text-secondary: #bae6fd;
@@ -30,19 +44,9 @@
   */
 }
 
-/* Complete App.css with Option 3: Sophisticated Green & Teal */
-
-/* Color Variables */
-:root {
-  --primary-color: #059669; 
-  --secondary-color: #0d9488; 
-  --accent-color: #ecfdf5;
-  --text-primary: #ffffff;
-  --text-secondary: #d1fae5;
-  --background-overlay: rgba(6, 20, 15, 0.8);
-}
-
-/* Base App Styles */
+/* ==========================================================================
+   🧩 BASE LAYOUT
+   ========================================================================== */
 .app {
   position: relative;
   min-height: 100vh;
@@ -78,75 +82,10 @@
   text-align: center;
 }
 
-/* Button Styles - Updated for Netflix Red */
-.btn-primary {
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-  border: none;
-  color: var(--text-primary);
-  padding: 14px 28px;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);
-  text-decoration: none;
-  display: inline-block;
-  text-transform: none;
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(229, 9, 20, 0.5);
-  filter: brightness(1.1);
-  background: linear-gradient(135deg, #f40612, #e50914);
-}
-
-.btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  color: var(--text-primary);
-  padding: 12px 26px;
-  border-radius: 6px;
-  font-weight: 500;
-  font-size: 16px;
-  cursor: pointer;
-  backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
-  text-decoration: none;
-  display: inline-block;
-}
-
-.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.6);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
-}
-
-.btn-ghost {
-  background: transparent;
-  border: 2px solid var(--primary-color);
-  color: var(--primary-color);
-  padding: 12px 26px;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-decoration: none;
-  display: inline-block;
-}
-
-.btn-ghost:hover {
-  background: var(--primary-color);
-  color: var(--text-primary);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);
-}
-
-/* Navigation Styles - Updated for Netflix Red */
-.navbar {
+/* ==========================================================================
+   🧭 NAVIGATION (Navbar + FAB)
+   ========================================================================== */
+.app-navbar {
   position: fixed;
   top: 0;
   left: 0;
@@ -198,7 +137,7 @@
   color: var(--text-primary);
   background: var(--primary-color);
   border-color: var(--primary-color);
-  box-shadow: 0 4px 15px rgba(229, 9, 20, 0.3);
+  box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
 }
 
 .nav-actions {
@@ -207,7 +146,116 @@
   align-items: center;
 }
 
-/* Content Card Styles */
+/* Forward/Backward Navigation */
+.navigation-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  margin: 24px auto 0;
+}
+.navigation-buttons .btn-primary,
+.navigation-buttons .btn-secondary {
+  min-width: 140px;
+}
+
+/* Floating FABs (bottom-right) */
+.nav-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 100px; /* sits above chatbot */
+  display: flex;
+  gap: 10px;
+  z-index: 10000;
+}
+
+.fab-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.12);
+  color: inherit;
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+.fab-btn:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.fab-primary {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  border: none;
+  color: var(--text-primary);
+}
+.fab-primary:hover {
+  filter: brightness(1.08);
+}
+.fab-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--primary-color);
+}
+
+/* ==========================================================================
+   🎛 BUTTONS
+   ========================================================================== */
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  border: none;
+  color: var(--text-primary);
+  padding: 14px 28px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  color: var(--text-primary);
+  padding: 12px 26px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+  padding: 12px 26px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.btn-ghost:hover {
+  background: var(--primary-color);
+  color: var(--text-primary);
+}
+
+/* ==========================================================================
+   🪶 CONTENT SECTIONS
+   ========================================================================== */
 .content-card {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(20px);
@@ -230,9 +278,7 @@
   background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
-
 .hero-subtitle {
   font-size: 1.25rem;
   color: var(--text-secondary);
@@ -242,7 +288,6 @@
   margin-right: auto;
   line-height: 1.6;
 }
-
 .hero-actions {
   display: flex;
   gap: 16px;
@@ -250,19 +295,19 @@
   flex-wrap: wrap;
 }
 
-/* Form Styles */
+/* ==========================================================================
+   📝 FORMS
+   ========================================================================== */
 .form-group {
   margin-bottom: 20px;
   text-align: left;
 }
-
 .form-label {
   display: block;
   color: var(--text-secondary);
   margin-bottom: 8px;
   font-weight: 500;
 }
-
 .form-input {
   width: 100%;
   padding: 12px 16px;
@@ -274,38 +319,24 @@
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
 }
-
 .form-input:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2);
 }
-
 .form-input::placeholder {
   color: var(--text-secondary);
   opacity: 0.7;
 }
 
-/* Utility Classes */
-.text-center {
-  text-align: center;
-}
-
-.text-primary {
-  color: var(--primary-color);
-}
-
-.text-secondary {
-  color: var(--text-secondary);
-}
-
-.mb-4 {
-  margin-bottom: 1.5rem;
-}
-
-.mt-4 {
-  margin-top: 1.5rem;
-}
+/* ==========================================================================
+   ⚙️ UTILITIES & RESPONSIVENESS
+   ========================================================================== */
+.text-center { text-align: center; }
+.text-primary { color: var(--primary-color); }
+.text-secondary { color: var(--text-secondary); }
+.mb-4 { margin-bottom: 1.5rem; }
+.mt-4 { margin-top: 1.5rem; }
 
 .container {
   max-width: 1200px;
@@ -313,33 +344,33 @@
   padding: 0 20px;
 }
 
-/* Responsive Design */
+/* Responsive */
 @media (max-width: 768px) {
-  .hero-title {
-    font-size: 2.5rem;
-  }
-  
-  .hero-subtitle {
-    font-size: 1.1rem;
-  }
-  
-  .nav-menu {
-    display: none;
-  }
-  
-  .hero-actions {
-    flex-direction: column;
-    align-items: center;
-  }
-  
+  .hero-title { font-size: 2.5rem; }
+  .hero-subtitle { font-size: 1.1rem; }
+  .nav-menu { display: none; }
+  .hero-actions { flex-direction: column; align-items: center; }
+
   .btn-primary,
   .btn-secondary,
   .btn-ghost {
     width: 100%;
     max-width: 300px;
   }
-  
+
   .main-content {
     padding: 80px 16px 40px;
+  }
+
+  .navigation-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .nav-fab {
+    right: 16px;
+    bottom: 92px;
+    flex-direction: column;
+    align-items: center;
   }
 }

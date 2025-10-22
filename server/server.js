@@ -3,8 +3,9 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import nodemailer from "nodemailer";
-import { connectDB } from "./config/db.js";
+import mongoose from "mongoose";
 import { Resend } from "resend";
+import { connectDB } from "./config/db.js";
 
 // =====================================================
 // 🧩 ROUTE IMPORTS
@@ -20,6 +21,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import tmdbRoutes from "./routes/tmdbRoutes.js";
 import spotifyRoutes from "./routes/spotifyRoutes.js";
 import booksRouter from "./routes/books.js";
+import contactRoutes from "./routes/contactRoutes.js"; // ✅ from first version
 import { errorHandler } from "./middlewares/errorHandler.js";
 
 // =====================================================
@@ -28,14 +30,23 @@ import { errorHandler } from "./middlewares/errorHandler.js";
 dotenv.config();
 const app = express();
 
-// ✅ Connect to MongoDB
-await connectDB();
+// ✅ Attempt DB Connection (with graceful fallback)
+try {
+  await connectDB();
+} catch (err) {
+  console.warn("⚠ MongoDB connection failed:", err.message);
+  console.warn("⚙ Running in demo mode without database");
+}
 
 // =====================================================
 // ⚙️ CORS CONFIGURATION
 // =====================================================
 const allowedOrigins = [
+  process.env.CLIENT_ORIGIN || "http://localhost:5173",
   "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:5174",
+  "http://127.0.0.1:5174",
   "https://personalised-recommendations-1.onrender.com",
 ];
 
@@ -66,22 +77,15 @@ app.use((req, res, next) => {
 // =====================================================
 // 📧 EMAIL CONFIGURATION — Resend + SMTP (Auto-Fallback)
 // =====================================================
-let sendEmail; // function used to send emails
+let sendEmail;
 
-// --- Option 1: Use Resend ---
 if (process.env.RESEND_API_KEY) {
   const resend = new Resend(process.env.RESEND_API_KEY);
   sendEmail = async (to, subject, text, html = null) => {
     const fromAddress =
       process.env.RESEND_FROM || "PickWise <onboarding@resend.dev>";
     try {
-      await resend.emails.send({
-        from: fromAddress,
-        to,
-        subject,
-        text,
-        html,
-      });
+      await resend.emails.send({ from: fromAddress, to, subject, text, html });
       console.log(`✅ Email sent via Resend to ${to}`);
     } catch (err) {
       console.error("❌ Resend email failed:", err?.message || err);
@@ -91,7 +95,6 @@ if (process.env.RESEND_API_KEY) {
   console.log("📨 Email provider: Resend");
 }
 
-// --- Option 2: Use SMTP if Resend not available ---
 if (!sendEmail && process.env.SMTP_USER && process.env.SMTP_PASS) {
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || "smtp.gmail.com",
@@ -129,7 +132,6 @@ if (!sendEmail && process.env.SMTP_USER && process.env.SMTP_PASS) {
   console.log("📨 Email provider: SMTP");
 }
 
-// --- Fallback if neither provider is configured ---
 if (!sendEmail) {
   console.warn(
     "⚠ No email provider configured. Set either RESEND_API_KEY or SMTP_USER/SMTP_PASS."
@@ -241,6 +243,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/tmdb", tmdbRoutes);
 app.use("/api/spotify", spotifyRoutes);
 app.use("/api/books", booksRouter);
+app.use("/api/contact", contactRoutes); // ✅ retained
 
 // ===== Error Handling Middleware =====
 app.use(errorHandler);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/Navbar.css";
 
@@ -6,7 +6,7 @@ function Navbar({ showOnlyLogout = false }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
-  // ✅ Load user from localStorage safely
+  // ✅ Load user safely from localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -28,15 +28,17 @@ function Navbar({ showOnlyLogout = false }) {
     navigate("/login");
   };
 
-  // ✅ If no user logged in, still show minimal Navbar
   return (
-    <nav className="navbar">
+    <nav className="navbar glass-navbar">
+      {/* 🎬 Logo */}
       <div className="navbar-logo">
-        <Link to="/">🎬 PickWise</Link>
+        <Link to="/" className="brand">
+          🎬 PickWise
+        </Link>
       </div>
 
+      {/* 🔒 If only logout should show (for ChooseCategoryPage) */}
       {showOnlyLogout ? (
-        // ✅ Show only Logout button if showOnlyLogout flag is true
         <div className="navbar-logout-only">
           {user && (
             <button onClick={handleLogout} className="logout-btn">
@@ -45,33 +47,63 @@ function Navbar({ showOnlyLogout = false }) {
           )}
         </div>
       ) : (
-        // ✅ Full Navbar (visible to both users & admins)
-        <div className="navbar-links">
-          <Link to="/Home">Home</Link>
+        <>
+          {/* 🌐 Navigation Links */}
+          <div className="navbar-links">
+            <Link to="/home" className="nav-item">
+              Home
+            </Link>
+            <Link to="/about" className="nav-item">
+              About Us
+            </Link>
+            <Link to="/contact" className="nav-item">
+              Contact Us
+            </Link>
+            <Link to="/guide" className="nav-item">
+              User Guide
+            </Link>
 
-          {/* 🚫 Hide Mood-Based for Admins */}
-          {user?.role !== "admin" && <Link to="/moodboard">Mood-Based</Link>}
+            {/* 👥 Role-based Links */}
+            {user?.role !== "admin" && (
+              <Link to="/moodboard" className="nav-item">
+                Mood-Based
+              </Link>
+            )}
+            {user?.role === "user" && (
+              <Link to="/preferences" className="nav-item">
+                Preferences
+              </Link>
+            )}
+            {user?.role === "admin" && (
+              <Link to="/admin" className="nav-item">
+                Admin Dashboard
+              </Link>
+            )}
+          </div>
 
-          {/* 👤 User-only link */}
-          {user && user.role === "user" && (
-            <Link to="/preferences">Preferences</Link>
-          )}
-
-          {/* 🛠 Admin-only link */}
-          {user && user.role === "admin" && (
-            <Link to="/admin">Admin Dashboard</Link>
-          )}
-
-          {/* Display username */}
-          {user && <span className="user-info">Hi, {user.name || "User"}</span>}
-
-          {/* ✅ Always show Logout when user is logged in */}
-          {user && (
-            <button onClick={handleLogout} className="logout-btn">
-              Logout
-            </button>
-          )}
-        </div>
+          {/* 👤 User Section */}
+          <div className="navbar-user">
+            {user ? (
+              <>
+                <span className="user-info">
+                  Hi, {user.name || user.email?.split("@")[0] || "User"}
+                </span>
+                <button onClick={handleLogout} className="logout-btn">
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="btn-secondary">
+                  Login
+                </Link>
+                <Link to="/signup" className="btn-primary">
+                  Signup
+                </Link>
+              </>
+            )}
+          </div>
+        </>
       )}
     </nav>
   );
