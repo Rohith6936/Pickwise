@@ -1,5 +1,5 @@
 import express from "express";
-import Preferences from "../models/Preferences.js";
+import Preferences from "../models/preferences.js";
 
 const router = express.Router();
 
