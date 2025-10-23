@@ -60,7 +60,7 @@ function Login() {
         }
       } catch (err) {
         console.error("❌ Error fetching preferences:", err);
-        navigate("/preferences", { replace: true });
+        navigate("/Choose", { replace: true });
       }
     } catch (err) {
       console.error("❌ Login failed:", err);
