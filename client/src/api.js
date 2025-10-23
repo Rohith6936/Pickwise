@@ -1,9 +1,10 @@
+// src/api/index.js
 import axios from "axios";
 
 // =====================================================
-// 🌍 BASE CONFIGURATION (✅ RELIES ON .env FILES)
+// 🌍 BASE CONFIGURATION (Uses .env for flexibility)
 // =====================================================
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = import.meta.env.VITE_API_URL?.trim() || "http://localhost:5000";
 
 console.log("🔗 Using API base URL:", API_BASE_URL); // Debug log
 
@@ -35,10 +36,12 @@ export const login = (data) => API.post("/auth/login", data);
 // =====================================================
 // 🎬📚🎵 USER PREFERENCES
 // =====================================================
+// ✅ Correct version for /api/preferences/:email
 export const saveMoviePreferences = (email, data) =>
-  API.post(`/users/preferences/${email}/movies`, data);
+  API.post(`/preferences/${email}`, data);
+
 export const getMoviePreferences = (email) =>
-  API.get(`/users/preferences/${email}/movies`);
+  API.get(`/preferences/${email}`);
 
 export const saveBookPreferences = (email, data) =>
   API.post(`/users/preferences/${email}/books`, data);
@@ -89,45 +92,47 @@ export const getGlobalExplanations = (type = "movies") =>
 export async function fetchRecommendations(email, type = "movies") {
   try {
     const res = await API.get(`/recommendations/${email}/${type}`);
-    if (res.data && res.data.recommendations?.length > 0) {
-      return res.data.recommendations;
-    }
-
-    console.warn(`⚠️ No ${type} recommendations found for ${email}`);
-    return [];
+    return res.data?.recommendations?.length > 0
+      ? res.data.recommendations
+      : [];
   } catch (err) {
     console.error(`❌ Error fetching ${type} recommendations:`, err.message);
-    const fallback = {
-      movies: [
-        {
-          title: "Inception",
-          year: "2010",
-          poster:
-            "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg",
-          overview:
-            "A skilled thief uses dream-sharing technology to perform corporate espionage.",
-        },
-      ],
-      books: [
-        {
-          title: "The Alchemist",
-          authors: ["Paulo Coelho"],
-          publishedDate: "1988",
-          thumbnail: "https://covers.openlibrary.org/b/id/240726-L.jpg",
-        },
-      ],
-      music: [
-        {
-          title: "Blinding Lights",
-          artist: "The Weeknd",
-          artwork:
-            "https://upload.wikimedia.org/wikipedia/en/0/09/The_Weeknd_-_Blinding_Lights.png",
-          previewUrl: "https://samplelib.com/lib/preview/mp3/sample-3s.mp3",
-        },
-      ],
-    };
-    return fallback[type] || [];
+    return fallbackRecommendations(type);
   }
+}
+
+// ✅ Fallback recommendations for offline/demo
+function fallbackRecommendations(type) {
+  const fallback = {
+    movies: [
+      {
+        title: "Inception",
+        year: "2010",
+        poster:
+          "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg",
+        overview:
+          "A skilled thief uses dream-sharing technology to perform corporate espionage.",
+      },
+    ],
+    books: [
+      {
+        title: "The Alchemist",
+        authors: ["Paulo Coelho"],
+        publishedDate: "1988",
+        thumbnail: "https://covers.openlibrary.org/b/id/240726-L.jpg",
+      },
+    ],
+    music: [
+      {
+        title: "Blinding Lights",
+        artist: "The Weeknd",
+        artwork:
+          "https://upload.wikimedia.org/wikipedia/en/0/09/The_Weeknd_-_Blinding_Lights.png",
+        previewUrl: "https://samplelib.com/lib/preview/mp3/sample-3s.mp3",
+      },
+    ],
+  };
+  return fallback[type] || [];
 }
 
 // =====================================================
@@ -168,7 +173,25 @@ export const reindexContent = (data) =>
   API.post("/admin/content/reindex", data);
 
 // =====================================================
-// ✉️ CONTACT FORM (User → Admin)
+// 📨 CONTACT ADMIN MANAGEMENT
+// =====================================================
+export const getAdminContacts = async () => {
+  const res = await API.get("/contact/admin-list");
+  return res.data;
+};
+
+export const replyToContact = async (id, replyMessage) => {
+  const res = await API.post(`/admin/contact/reply/${id}`, { replyMessage });
+  return res.data;
+};
+
+export const updateContactStatus = async (id, status) => {
+  const res = await API.patch(`/admin/contact/status/${id}`, { status });
+  return res.data;
+};
+
+// =====================================================
+// 📨 CONTACT FORM SUBMISSION (User-facing)
 // =====================================================
 export const submitContact = async (data) => {
   try {
@@ -178,29 +201,6 @@ export const submitContact = async (data) => {
     console.error("❌ Error submitting contact form:", err.response?.data || err.message);
     throw err;
   }
-};
-
-
-// =====================================================
-// 📨 CONTACT ADMIN MANAGEMENT (✅ NEWLY ADDED)
-// =====================================================
-
-// Get all contact messages (admin/dev)
-export const getAdminContacts = async () => {
-  const res = await API.get("/contact/admin-list");
-  return res.data;
-};
-
-// Send a reply to a specific contact message
-export const replyToContact = async (id, replyMessage) => {
-  const res = await API.post(`/admin/contact/reply/${id}`, { replyMessage });
-  return res.data;
-};
-
-// Update status of a specific contact message
-export const updateContactStatus = async (id, status) => {
-  const res = await API.patch(`/admin/contact/status/${id}`, { status });
-  return res.data;
 };
 
 // =====================================================
@@ -239,8 +239,11 @@ API.interceptors.response.use(
     const status = error?.response?.status;
 
     if (status === 401 || status === 403) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      // Clear invalid session
+      ["token", "user", "selectedCategory"].forEach((k) =>
+        localStorage.removeItem(k)
+      );
+
       if (
         typeof window !== "undefined" &&
         !window.location.pathname.startsWith("/login") &&

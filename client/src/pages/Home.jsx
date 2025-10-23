@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
 import "../styles/Home.css";
 import API, { getRecommendations, getPreferences } from "../api";
-import RecommendationCard from "../components/RecommendationCard"; // ✅ import the card
+import RecommendationCard from "../components/RecommendationCard";
+import Navbar from "../pages/Navbar";
+import { toast, Toaster } from "react-hot-toast";
 
 function Home() {
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(getMessage());
   const [preferences, setPreferences] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null); // 🧭 new state for cache timestamp
+  const [usedCache, setUsedCache] = useState(false); // ⚡ track if cache/fallback used
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -35,43 +39,76 @@ function Home() {
         .catch(() => console.warn("⚠️ No preferences found in backend."));
     }
 
-    // ✅ Fetch movie recommendations
-    const fetchHistory = () => {
-      API.get(`/recommendations/${email}/history`)
-        .then(({ data }) => {
-          const latest = data?.history?.[0]?.movies || [];
-          setRecommendations(formatMovies(latest));
-          setLoading(false);
-        })
-        .catch((err) => {
-          console.error("❌ Error fetching history:", err);
-          setRecommendations([]);
-          setLoading(false);
-        });
-    };
+    // ✅ Fetch movie recommendations (with cache awareness)
+    const fetchRecommendations = async () => {
+      try {
+        const { data } = await getRecommendations(email);
 
-    getRecommendations(email)
-      .then(({ data }) => {
+        // If backend indicates fallback/cache was used
+        if (data?.usedCache || data?.fromCache) {
+          setUsedCache(true);
+          toast("⚠️ Showing cached recommendations (AI offline)", {
+            icon: "⚠️",
+            duration: 4000,
+          });
+        }
+
+        // Capture last updated timestamp from backend
+        if (data?.lastUpdated) {
+          setLastUpdated(new Date(data.lastUpdated));
+        }
+
         const list = data.recommendations || data || [];
         if (!list || list.length === 0) {
+          console.warn("⚠️ No fresh recommendations, checking history...");
           fetchHistory();
         } else {
           setRecommendations(formatMovies(list));
           setLoading(false);
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("❌ Error fetching fresh recs:", err);
         fetchHistory();
-      });
+      }
+    };
 
-    // ✅ Update greeting message every minute
+    // ✅ Fetch backup history if new recs fail
+    const fetchHistory = async () => {
+      try {
+        const { data } = await API.get(`/recommendations/${email}/history`);
+        const latest = data?.history?.[0]?.movies || [];
+        if (latest.length > 0) {
+          setRecommendations(formatMovies(latest));
+          setUsedCache(true);
+          toast("⚠️ Showing last saved recommendations.", { icon: "🕒" });
+        } else {
+          setRecommendations([]);
+        }
+      } catch (err) {
+        console.error("❌ Error fetching history:", err);
+        setRecommendations([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecommendations();
+
+    // ✅ Update greeting every minute
     const interval = setInterval(() => setMessage(getMessage()), 60000);
     return () => clearInterval(interval);
   }, []);
 
+  // 🕒 Format last updated time for UI
+  const formattedLastUpdated = lastUpdated
+    ? new Date(lastUpdated).toLocaleString()
+    : null;
+
   return (
     <div className="home-container">
+      <Navbar />
+      <Toaster position="top-center" />
+
       <div className="hero">
         <h1>
           <span className="glow">{message}</span>
@@ -83,7 +120,7 @@ function Home() {
           taste and preferences.
         </p>
 
-        {/* ✅ Safe display of preferences */}
+        {/* ✅ Display preferences summary */}
         {preferences && (
           <p style={{ marginTop: "1rem", fontStyle: "italic" }}>
             🎯 Based on your preferences:{" "}
@@ -97,6 +134,14 @@ function Home() {
           </p>
         )}
 
+        {/* 🧠 Cache info */}
+        {formattedLastUpdated && (
+          <p style={{ color: "#ccc", fontSize: "0.9rem" }}>
+            🕒 Last AI update: {formattedLastUpdated}
+            {usedCache && " (cached results)"}
+          </p>
+        )}
+
         <div className="button-row">
           <button
             className="primary-button"
@@ -107,7 +152,7 @@ function Home() {
         </div>
       </div>
 
-      {/* 🎬 Movie Recommendations */}
+      {/* 🎬 Recommendations */}
       <div className="carousel">
         <h2 className="carousel-heading">Your Top Picks</h2>
         {loading ? (
@@ -128,7 +173,7 @@ function Home() {
                     "Amazon Prime",
                   ],
                 }}
-                type="movie" // ✅ Enables like/dislike + review UI
+                type="movie"
               />
             ))}
           </div>

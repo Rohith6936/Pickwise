@@ -1,3 +1,4 @@
+// src/pages/Auth/Login.jsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { login, getPreferences } from "../../api";
@@ -19,15 +20,13 @@ function Login() {
     setLoading(true);
 
     try {
-      // ✅ 1. Authenticate the user
+      // ✅ Step 1: Authenticate user
       const res = await login(form);
       const { token, user } = res.data || {};
 
-      if (!token || !user) {
-        throw new Error("Invalid login response from server");
-      }
+      if (!token || !user) throw new Error("Invalid login response from server");
 
-      // ✅ 2. Store authentication data locally
+      // ✅ Step 2: Save authentication info
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
       localStorage.setItem("userEmail", user.email);
@@ -35,20 +34,20 @@ function Login() {
       const email = user.email;
       const role = user.role || "user";
 
-      // ✅ 3. Redirect admin users
+      // ✅ Step 3: Redirect admin users
       if (role === "admin") {
         navigate("/admin", { replace: true });
         return;
       }
 
-      // ✅ 4. Check for local preferences first
+      // ✅ Step 4: Check local preferences
       const localPrefs = localStorage.getItem(`preferences_${email}`);
       if (localPrefs) {
         navigate("/choose", { replace: true });
         return;
       }
 
-      // ✅ 5. Fetch preferences from backend if not found locally
+      // ✅ Step 5: Try fetching preferences from backend
       try {
         const prefsRes = await getPreferences(email);
         const prefs = prefsRes?.data?.data || prefsRes?.data || {};
@@ -80,7 +79,6 @@ function Login() {
       <div className="auth-box">
         <h2>Login</h2>
 
-        {/* ⚠️ Error Message */}
         {error && <p className="auth-error">{error}</p>}
 
         <form onSubmit={handleSubmit}>
@@ -92,6 +90,7 @@ function Login() {
             onChange={handleChange}
             required
           />
+
           <input
             type="password"
             name="password"

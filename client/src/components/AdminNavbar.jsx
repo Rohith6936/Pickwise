@@ -1,3 +1,4 @@
+// src/components/AdminNavbar.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
@@ -9,36 +10,35 @@ export default function AdminNavbar() {
   const [open, setOpen] = useState(false);
   const profileRef = useRef(null);
 
-  // ✅ Load stored admin user from localStorage
+  // ✅ Load user safely from localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
-      } catch {
-        console.warn("⚠️ Failed to parse stored user");
+      } catch (err) {
+        console.error("Error parsing user:", err);
       }
     }
   }, []);
 
-  // ✅ Generate avatar initial (first letter of name/email)
-  const initial = (user?.name || user?.email || "A")
+  const userInitial = (user?.name || user?.email || "A")
     .trim()
     .charAt(0)
     .toUpperCase();
 
-  // ✅ Close dropdown when clicking outside
+  // ✅ Close menu on outside click
   useEffect(() => {
-    const onDocClick = (e) => {
+    function handleDocClick(e) {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
         setOpen(false);
       }
-    };
-    document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
+    }
+    document.addEventListener("mousedown", handleDocClick);
+    return () => document.removeEventListener("mousedown", handleDocClick);
   }, []);
 
-  // ✅ Handle logout
+  // ✅ Logout and redirect to login
   const handleLogout = () => {
     try {
       localStorage.removeItem("user");
@@ -48,36 +48,44 @@ export default function AdminNavbar() {
     } catch (err) {
       console.error("Error clearing localStorage:", err);
     }
-    navigate("/login", { replace: true }); // Prevent back navigation
+    navigate("/login", { replace: true }); // ✅ ensures no back navigation to admin
   };
 
   return (
-    <nav className="navbar">
-      {/* 🏠 Logo */}
+    <nav className="navbar admin-navbar">
+      {/* 🎬 Brand Logo */}
       <div className="navbar-logo">
         <Link to="/">🎬 PickWise</Link>
       </div>
 
-      {/* 👤 Profile Menu */}
-      <div style={{ marginLeft: "auto" }} className="navbar-links">
+      {/* 👤 Admin Profile */}
+      <div className="navbar-links" style={{ marginLeft: "auto" }}>
         <div className="profile" ref={profileRef}>
           <button
             className="avatar-btn"
-            aria-label="Profile"
+            aria-label="Admin Profile"
             title={user?.name || user?.email || "Admin"}
             onClick={() => setOpen((v) => !v)}
             aria-haspopup="menu"
             aria-expanded={open}
           >
-            <FaUserCircle className="avatar-fallback" />
+            {user?.avatar ? (
+              <img src={user.avatar} alt="Admin Avatar" className="avatar-img" />
+            ) : (
+              <FaUserCircle className="avatar-fallback" />
+            )}
             <span className="avatar-initial" aria-hidden>
-              {initial}
+              {!user?.avatar ? userInitial : null}
             </span>
           </button>
 
-          {/* Dropdown */}
           {open && (
             <div className="profile-menu" role="menu">
+              <div className="profile-header">
+                <div className="profile-name">{user?.name || "Admin"}</div>
+                {user?.email && <div className="profile-email">{user.email}</div>}
+                <div className="profile-role">Role: Admin</div>
+              </div>
               <button
                 className="menu-item danger"
                 onClick={handleLogout}

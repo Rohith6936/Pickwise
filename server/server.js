@@ -23,7 +23,7 @@ import spotifyRoutes from "./routes/spotifyRoutes.js";
 import booksRouter from "./routes/books.js";
 import contactRoutes from "./routes/contactRoutes.js"; // ✅ from first version
 import { errorHandler } from "./middlewares/errorHandler.js";
-
+import preferencesRoutes from "./routes/preferences.js";
 // =====================================================
 // ⚙️ INITIALIZATION
 // =====================================================
@@ -296,6 +296,7 @@ app.use("/api/tmdb", tmdbRoutes);
 app.use("/api/spotify", spotifyRoutes);
 app.use("/api/books", booksRouter);
 app.use("/api/contact", contactRoutes); // ✅ retained
+app.use("/api/preferences", preferencesRoutes); 
 
 // ===== Error Handling Middleware =====
 app.use(errorHandler);

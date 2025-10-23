@@ -1,7 +1,9 @@
-import React from "react";
+// src/pages/ChooseCategoryPage.jsx
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/ChooseCategoryPage.css";
-import "../styles/App.css"; // for FAB & shared button styles
+import "../styles/App.css"; // ✅ For FAB and button styles
+
 import {
   FaFilm,
   FaBookOpen,
@@ -10,12 +12,27 @@ import {
   FaArrowLeft,
   FaArrowRight,
 } from "react-icons/fa";
-import Navbar from "../components/Navbar";
+import Navbar from "../pages/Navbar"; // ✅ Correct path
 
 const ChooseCategoryPage = () => {
   const navigate = useNavigate();
 
-  // ✅ Handle category selection and redirect
+  // ✅ Prevent navigating back to login from Choose page
+  useEffect(() => {
+    try {
+      const path = window.location.pathname;
+      window.history.replaceState(null, "", path);
+      const handlePop = (e) => {
+        // Push forward to stay on this page
+        window.history.go(1);
+      };
+      window.addEventListener("popstate", handlePop);
+      return () => window.removeEventListener("popstate", handlePop);
+    } catch (err) {
+      console.error("Navigation control error:", err);
+    }
+  }, []);
+
   const handleChoice = (type) => {
     localStorage.setItem("selectedCategory", type);
     if (type === "movies") navigate("/preferences");
@@ -23,44 +40,41 @@ const ChooseCategoryPage = () => {
     else if (type === "music") navigate("/music-preferences");
   };
 
-  // ✅ Page navigation buttons
+  // ✅ Navigation FABs
   const goBack = () => navigate(-1);
   const goForward = () => navigate(1);
 
   return (
     <div className="choose-container">
-      {/* 🌐 Top Navbar */}
-      <Navbar />
+      {/* 🌐 Top Navigation Bar */}
+      <Navbar hideHome hideMood hidePreferences />
 
-      {/* 🧠 Page Title */}
+      {/* 🧠 Main Title */}
       <h1 className="choose-title">
         What would you like recommendations for today?
       </h1>
 
-      {/* 🎬 Category Selection Grid */}
+      {/* 🎬 Category Cards */}
       <div className="card-grid">
-        {/* Movies */}
         <div className="category-card" onClick={() => handleChoice("movies")}>
           <FaFilm className="card-icon movie-icon" />
           <h2>Movies</h2>
           <p>Explore trending films, timeless classics, and hidden gems.</p>
         </div>
 
-        {/* Books */}
         <div className="category-card" onClick={() => handleChoice("book")}>
           <FaBookOpen className="card-icon book-icon" />
           <h2>Books</h2>
           <p>Discover inspiring reads, bestsellers, and must-read stories.</p>
         </div>
 
-        {/* Music */}
         <div className="category-card" onClick={() => handleChoice("music")}>
           <FaMusic className="card-icon music-icon" />
           <h2>Music</h2>
           <p>Listen to popular hits, timeless tunes, and hidden melodies.</p>
         </div>
 
-        {/* Smart Recommendations */}
+        {/* 🧠 Smart Recommendations Card */}
         <div
           className="category-card smart-card"
           onClick={() => navigate("/recommendations-hub")}
@@ -74,7 +88,7 @@ const ChooseCategoryPage = () => {
         </div>
       </div>
 
-      {/* 🔄 Floating Forward/Backward Buttons */}
+      {/* 🔄 Floating Navigation Buttons */}
       <div className="nav-fab">
         <button
           className="fab-btn fab-secondary"

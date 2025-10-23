@@ -5,12 +5,74 @@ import axios from "axios";
 import User from "../models/User.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// ===============================================================
+// ⚙️ Gemini API Setup with Validation
+// ===============================================================
+const GEMINI_KEY = process.env.GEMINI_API_KEY?.trim();
+let genAI = null;
+if (!GEMINI_KEY || !GEMINI_KEY.startsWith("AIza")) {
+  console.warn("⚠️ Invalid or missing GEMINI_API_KEY — AI features disabled.");
+} else {
+  try {
+    genAI = new GoogleGenerativeAI(GEMINI_KEY);
+    console.log("✅ Gemini API initialized successfully.");
+  } catch (err) {
+    console.error("❌ Failed to initialize Gemini API:", err.message);
+  }
+}
+
+// ===============================================================
+// 🧩 Fallback Recommendations (when Gemini fails)
+// ===============================================================
+const FALLBACK_RECOMMENDATIONS = {
+  movie: [
+    {
+      title: "Inception",
+      year: "2010",
+      overview: "A skilled thief uses dream-sharing technology for corporate espionage.",
+      poster: "https://m.media-amazon.com/images/I/51FCK3VfBLL._AC_.jpg",
+    },
+    {
+      title: "Interstellar",
+      year: "2014",
+      overview: "A team travels through a wormhole in search of a new home for humanity.",
+      poster: "https://m.media-amazon.com/images/I/81tEgsxpNZS._AC_SL1500_.jpg",
+    },
+  ],
+  book: [
+    {
+      title: "The Alchemist",
+      authors: ["Paulo Coelho"],
+      description: "A story about following your dreams and destiny.",
+      thumbnail: "https://covers.openlibrary.org/b/id/240726-L.jpg",
+    },
+    {
+      title: "1984",
+      authors: ["George Orwell"],
+      description: "A dystopian novel exploring government surveillance and freedom.",
+      thumbnail: "https://covers.openlibrary.org/b/id/7222246-L.jpg",
+    },
+  ],
+  music: [
+    {
+      title: "Blinding Lights",
+      artist: "The Weeknd",
+      artwork:
+        "https://upload.wikimedia.org/wikipedia/en/0/09/The_Weeknd_-_Blinding_Lights.png",
+    },
+    {
+      title: "Shape of You",
+      artist: "Ed Sheeran",
+      artwork:
+        "https://upload.wikimedia.org/wikipedia/en/4/45/Shape_Of_You_%28Official_Single_Cover%29_by_Ed_Sheeran.png",
+    },
+  ],
+};
 
 // ===============================================================
 // 🕐 Timeout Helper
 // ===============================================================
-async function withTimeout(promise, ms = 10000) {
+async function withTimeout(promise, ms = 20000) {
   return Promise.race([
     promise,
     new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms)),
@@ -65,7 +127,6 @@ async function getBookDetails(title) {
       thumbnail: info.imageLinks?.thumbnail || "",
       categories: info.categories || [],
       publishedDate: info.publishedDate || "N/A",
-      infoLink: info.infoLink || "",
     };
   } catch (err) {
     console.error("📚 Google Books Error:", err.message);
@@ -92,9 +153,6 @@ async function getMusicDetails(term) {
       album: item.collectionName || "Unknown Album",
       artwork: item.artworkUrl100 || "",
       previewUrl: item.previewUrl || "",
-      releaseDate: item.releaseDate?.split("T")[0] || "N/A",
-      genre: item.primaryGenreName || "N/A",
-      iTunesUrl: item.trackViewUrl || "",
     };
   } catch (err) {
     console.error("🎵 iTunes Error:", err.message);
@@ -103,7 +161,30 @@ async function getMusicDetails(term) {
 }
 
 // ===============================================================
-// 🎯  Single-Domain Recommendations
+// 🧠 Safe Gemini Request (retry + model fallback)
+// ===============================================================
+async function safeGeminiRequest(prompt) {
+  if (!genAI) throw new Error("Gemini not initialized");
+  const models = ["gemini-1.5-flash", "gemini-2.0-flash"];
+  for (const m of models) {
+    try {
+      const model = genAI.getGenerativeModel({ model: m });
+      const result = await withTimeout(model.generateContent(prompt), 20000);
+      const text = result?.response?.text?.();
+      if (text) return text;
+    } catch (err) {
+      console.warn(`⚠️ Model ${m} failed: ${err.message}`);
+      if (err.message.includes("API key not valid")) {
+        console.error("🚨 Invalid Gemini API key. Please check .env or regenerate.");
+        throw err;
+      }
+    }
+  }
+  throw new Error("All Gemini models failed");
+}
+
+// ===============================================================
+// 🎯 Single-Domain Recommendations
 // ===============================================================
 export const getRecommendations = async (email, type = "movies") => {
   try {
@@ -125,28 +206,33 @@ Favorites: ${favorites}
 Return plain names, one per line.
 `;
 
-    let model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    let result;
-    try {
-      result = await withTimeout(model.generateContent(prompt), 15000);
-    } catch {
-      model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-      result = await withTimeout(model.generateContent(prompt), 15000);
-    }
+    let names = [];
+    let aiWorked = false;
 
-    const names =
-      result?.response
-        ?.text?.()
-        ?.split(/\r?\n/)
+    // 🧠 Try Gemini
+    try {
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      const result = await withTimeout(model.generateContent(prompt), 15000);
+      names = result?.response?.text?.()?.split(/\r?\n/)
         .map((x) => x.replace(/^[\-\*\d\.\)\s"]+|["]+$/g, "").trim())
         .filter(Boolean) || [];
+      aiWorked = names.length > 0;
+    } catch (err) {
+      console.warn("💡 Gemini unavailable — using cache/fallback.");
+    }
 
+    // 📦 If Gemini failed → use cache
+    if (!aiWorked && user.recommendationsCache?.[type]?.length) {
+      console.log(`🗃 Using cached ${type} recommendations for ${email}`);
+      return user.recommendationsCache[type];
+    }
+
+    // 🧱 Fallback if no cache either
     const fallback = {
       movie: ["Inception", "Interstellar", "Titanic"],
       book: ["Harry Potter", "The Hobbit", "1984"],
       music: ["Blinding Lights", "Shape of You", "Bohemian Rhapsody"],
     }[singularType];
-
     const items = names.length ? names : fallback;
 
     const detailPromises = items.map((n) =>
@@ -156,7 +242,16 @@ Return plain names, one per line.
         ? getMusicDetails(n)
         : getMovieDetails(n)
     );
+
     const details = (await Promise.all(detailPromises)).filter(Boolean);
+
+    // ✅ Save AI results to cache (if AI worked)
+    if (aiWorked) {
+      user.recommendationsCache[type] = details;
+      user.recommendationsCache.lastUpdated = new Date();
+      await user.save();
+      console.log(`✅ ${type} recommendations cached for ${email}`);
+    }
 
     return details.length ? details : fallback.map((title) => ({ title }));
   } catch (err) {
@@ -166,12 +261,10 @@ Return plain names, one per line.
 };
 
 // ===============================================================
-// 🌍  Cross-Domain Recommendations
+// 🌍 Cross-Domain Recommendations
 // ===============================================================
 export const getCrossDomainRecommendations = async (email, query = "romantic adventure") => {
   try {
-    console.log(`🌍 Generating cross-domain recs for: "${query}"`);
-
     const prompt = `
 User Query: "${query}"
 Suggest related recommendations:
@@ -184,19 +277,21 @@ Books:
 Ensure 3 for each and only plain text lists.
 `;
 
-    let model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    let result;
+    let text = "";
     try {
-      result = await withTimeout(model.generateContent(prompt), 20000);
-    } catch {
-      model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-      result = await withTimeout(model.generateContent(prompt), 20000);
+      text = await safeGeminiRequest(prompt);
+    } catch (err) {
+      console.warn("💡 Gemini down — using fallback for cross-domain.");
+      return {
+        baseQuery: query,
+        recommendations: {
+          movies: FALLBACK_RECOMMENDATIONS.movie,
+          music: FALLBACK_RECOMMENDATIONS.music,
+          books: FALLBACK_RECOMMENDATIONS.book,
+        },
+      };
     }
 
-    const text = result?.response?.text?.() || "";
-    console.log("🧠 Gemini Raw Cross Output:\n", text);
-
-    // Split into sections robustly
     const extract = (section) =>
       text
         .split(new RegExp(`${section}:`, "i"))[1]
@@ -216,13 +311,13 @@ Ensure 3 for each and only plain text lists.
     return {
       baseQuery: query,
       recommendations: {
-        movies: movieDetails,
-        music: musicDetails,
-        books: bookDetails,
+        movies: movieDetails.length ? movieDetails : FALLBACK_RECOMMENDATIONS.movie,
+        music: musicDetails.length ? musicDetails : FALLBACK_RECOMMENDATIONS.music,
+        books: bookDetails.length ? bookDetails : FALLBACK_RECOMMENDATIONS.book,
       },
     };
   } catch (err) {
     console.error("❌ Cross-Domain Error:", err.message);
-    return { baseQuery: query, recommendations: { movies: [], music: [], books: [] } };
+    return { baseQuery: query, recommendations: FALLBACK_RECOMMENDATIONS };
   }
 };

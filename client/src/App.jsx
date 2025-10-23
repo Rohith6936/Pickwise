@@ -1,5 +1,5 @@
-// finalworking/p6/client/src/App.jsx
-import React from "react";
+// src/App.jsx
+import React, { useEffect, useState } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -12,6 +12,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ChatFloatingButton from "./components/ChatFloatingButton";
 import NavigationButtons from "./components/NavigationButtons";
 import AdminNavbar from "./components/AdminNavbar";
+import Navbar from "./pages/Navbar";
 
 // ===== Core Pages =====
 import Home from "./pages/Home";
@@ -66,14 +67,39 @@ export default function App() {
 
 function AppContent() {
   const location = useLocation();
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
-  // 🎯 Routes where Chatbot & NavButtons are hidden
+  useEffect(() => {
+    const savedCategory = localStorage.getItem("selectedCategory");
+    setSelectedCategory(savedCategory);
+  }, [location.pathname]);
+
+  // 🧭 Routes where Navbar should be hidden
+  const hideNavbarRoutes = [
+    "/login",
+    "/signup",
+    "/",
+    "/choose",
+    "/admin",
+    "/admin/users",
+    "/admin/analytics",
+    "/admin/feedback",
+    "/admin/contacts",
+    "/book-preferences",
+    "/books/wishlist",
+    "/music-preferences",
+    "/music/artist",
+    "/music/popularity",
+    "/music/blend",
+    "/recommendations-hub",
+  ];
+
+  // 💬 Routes where Chatbot should be hidden
   const hideChatbotRoutes = [
     "/",
     "/login",
     "/signup",
     "/chat",
-    "/choose",
     "/admin",
     "/admin/users",
     "/admin/analytics",
@@ -81,14 +107,26 @@ function AppContent() {
     "/admin/contacts",
   ];
 
-  const hideNavButtons =
-    location.pathname.startsWith("/admin") || location.pathname === "/choose";
-
+  const hideNavbar = hideNavbarRoutes.includes(location.pathname);
   const hideChatbotButton = hideChatbotRoutes.includes(location.pathname);
+  const isChoosePage = location.pathname === "/choose";
+
+  // 🧠 Navbar logic
+  let showNavbar = false;
+  let showOnlyLogout = false;
+
+  if (!hideNavbar) {
+    if (isChoosePage) {
+      showNavbar = true;
+      showOnlyLogout = true;
+    } else if (selectedCategory) {
+      showNavbar = true;
+    }
+  }
 
   return (
     <div className="app">
-      {/* 🧭 Admin Navbar (visible only on /admin routes) */}
+      {/* 🧭 Admin Navbar */}
       {location.pathname.startsWith("/admin") && <AdminNavbar />}
 
       {/* 🎥 Background Video */}
@@ -97,6 +135,9 @@ function AppContent() {
         Your browser does not support the video tag.
       </video>
       <div className="video-overlay"></div>
+
+      {/* 🧠 Conditional Navbar */}
+      {showNavbar && <Navbar showOnlyLogout={showOnlyLogout} />}
 
       <main className="main-content">
         <Routes>
@@ -121,7 +162,7 @@ function AppContent() {
             }
           />
 
-          {/* 🎬 Movies */}
+          {/* 🎬 Movie Preferences */}
           <Route
             path="/preferences"
             element={
@@ -222,7 +263,7 @@ function AppContent() {
             }
           />
 
-          {/* 🔁 Shared Authenticated Routes */}
+          {/* 🔁 Shared Auth Routes */}
           <Route
             path="/feedback"
             element={
@@ -319,13 +360,12 @@ function AppContent() {
           {/* 🧭 Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-
-        {/* 🔄 Navigation Buttons */}
-        {!hideNavButtons && <NavigationButtons />}
       </main>
 
       {/* 💬 Floating Chat Button */}
       {!hideChatbotButton && <ChatFloatingButton />}
+      {/* 🧭 Floating Navigation Buttons (Back/Next) */}
+      <NavigationButtons />
     </div>
   );
 }

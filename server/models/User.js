@@ -14,6 +14,16 @@ const preferenceSchema = new mongoose.Schema({
 });
 
 // ======================================================
+// 💾 Cached Recommendations Schema
+// ======================================================
+const cacheSchema = new mongoose.Schema({
+  movies: { type: Array, default: [] },
+  books: { type: Array, default: [] },
+  music: { type: Array, default: [] },
+  lastUpdated: { type: Date, default: null },
+});
+
+// ======================================================
 // 👤 User Schema
 // ======================================================
 const userSchema = new mongoose.Schema(
@@ -33,6 +43,9 @@ const userSchema = new mongoose.Schema(
       books: { type: preferenceSchema, default: {} },
       music: { type: preferenceSchema, default: {} },
     },
+
+    // 🧠 AI-generated recommendations cache
+    recommendationsCache: { type: cacheSchema, default: {} },
   },
   {
     timestamps: true, // adds createdAt and updatedAt

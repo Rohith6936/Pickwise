@@ -6,7 +6,7 @@ import {
 } from "../api";
 import "../styles/Preferences.css";
 import { toast, Toaster } from "react-hot-toast";
-import Navbar from "../components/Navbar"; // ✅ Corrected path
+import Navbar from "../pages/Navbar";
 
 export default function Preferences() {
   const [genres, setGenres] = useState([]);
@@ -27,14 +27,13 @@ export default function Preferences() {
     "Animation",
   ];
 
-  // ✅ Toggle genre selection
   const toggleGenre = (g) => {
     setGenres((prev) =>
       prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g]
     );
   };
 
-  // ✅ Load existing preferences when component mounts
+  // ✅ Load saved preferences
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     const email = storedUser ? JSON.parse(storedUser).email : null;
@@ -42,12 +41,14 @@ export default function Preferences() {
 
     getPreferences(email)
       .then(({ data }) => {
-        const prefs = data?.data || {};
+        const prefs = data?.data || data || {};
         setGenres(prefs.genres || []);
         setEra(prefs.era || "");
         setFavorites((prefs.favorites || []).join(", "));
       })
-      .catch(() => console.log("ℹ No preferences found, showing empty form."));
+      .catch((err) => {
+        console.warn("ℹ️ No preferences found:", err.message);
+      });
   }, []);
 
   // ✅ Save preferences
@@ -75,18 +76,19 @@ export default function Preferences() {
 
     try {
       console.log("📧 Sending Preferences:", email, userPrefs);
-
       const res = await savePreferences(email, userPrefs);
+      console.log("📩 API Response:", res);
 
-      if (res.success) {
+      // ✅ Handle both success types
+      if (res.data?.success || res.status === 200) {
         localStorage.setItem(`preferences_${email}`, JSON.stringify(userPrefs));
         toast.success("✅ Preferences saved successfully!");
-        setTimeout(() => navigate("/home"), 1500);
+        navigate("/home");
       } else {
-        toast.error(res.message || "Failed to save preferences.");
+        toast.error(res.data?.message || "Failed to save preferences.");
       }
     } catch (err) {
-      console.error("❌ Error saving preferences:", err.response?.data || err.message);
+      console.error("❌ Error saving preferences:", err);
       toast.error("Failed to save preferences. Please try again.");
     } finally {
       setLoading(false);
@@ -101,7 +103,6 @@ export default function Preferences() {
       <form className="preferences-card" onSubmit={handleSubmit}>
         <h2>🎬 Movie Preferences</h2>
 
-        {/* 1️⃣ GENRES */}
         <h3>1️⃣ Select your favorite genres</h3>
         <div className="genre-list">
           {genreList.map((g) => (
@@ -115,7 +116,6 @@ export default function Preferences() {
           ))}
         </div>
 
-        {/* 2️⃣ ERA */}
         <h3>2️⃣ What kind of movies do you prefer?</h3>
         <select value={era} onChange={(e) => setEra(e.target.value)} required>
           <option value="">-- Select Era --</option>
@@ -124,7 +124,6 @@ export default function Preferences() {
           <option value="Both">🎬 Both</option>
         </select>
 
-        {/* 3️⃣ FAVORITES */}
         <h3>3️⃣ Name 2–3 of your favorite movies</h3>
         <textarea
           placeholder="Type your favorite movies (comma-separated)..."

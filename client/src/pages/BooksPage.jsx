@@ -1,8 +1,9 @@
+// src/pages/BooksPage.jsx
 import React, { useState, useEffect } from "react";
 import { FaHeart, FaBook, FaSyncAlt } from "react-icons/fa";
 import "../styles/BooksPage.css";
 import { useNavigate } from "react-router-dom";
-import { API_BASE_URL } from "../api"; // ✅ import from your api.js
+import { API_BASE_URL } from "../api"; // ✅ dynamic base URL for local + deployed use
 
 const BooksPage = () => {
   const [books, setBooks] = useState([]);
@@ -17,10 +18,7 @@ const BooksPage = () => {
   const fetchBooks = async () => {
     try {
       setIsLoading(true);
-
-      // ✅ Uses deployed API dynamically (no localhost hardcoding)
       const res = await fetch(`${API_BASE_URL}/api/books?genre=${genre}`);
-
       if (!res.ok) {
         throw new Error(`Server responded with status ${res.status}`);
       }
@@ -79,9 +77,7 @@ const BooksPage = () => {
 
       {/* 📚 Books List */}
       {books.length === 0 && !isLoading ? (
-        <p className="no-books">
-          No books found for this genre. Try another one!
-        </p>
+        <p className="no-books">No books found for this genre. Try another one!</p>
       ) : (
         <div className="books-grid">
           {books.map((book) => {

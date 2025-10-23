@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import "../styles/Mood.css";
-import { API_BASE_URL } from "../api"; // ✅ centralized backend URL
+import { API_BASE_URL } from "../api"; // ✅ Import API base URL
 
 const providerLinks = {
   "Netflix": "https://www.netflix.com/",
@@ -27,10 +27,10 @@ export default function MoodMovies() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // ✅ Fetch movies dynamically
   const fetchMovies = useCallback(async () => {
     try {
       setLoading(true);
-      // ✅ Environment-safe API call
       const res = await fetch(`${API_BASE_URL}/api/mood/${genre}?t=${Date.now()}`);
       const data = await res.json();
       setMovies(data);
@@ -60,7 +60,7 @@ export default function MoodMovies() {
           className={`refresh-btn ${refreshing ? "refreshing" : ""}`}
           disabled={loading}
         >
-          🔄 {refreshing ? "Refreshing..." : "Refresh Recommendations"}
+          🔄 Refresh Recommendations
         </button>
       </div>
 
