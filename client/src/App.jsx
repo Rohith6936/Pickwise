@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+// finalworking/p6/client/src/App.jsx
+import React from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -7,12 +8,16 @@ import {
   useLocation,
 } from "react-router-dom";
 
-import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ChatFloatingButton from "./components/ChatFloatingButton";
+import NavigationButtons from "./components/NavigationButtons";
+import AdminNavbar from "./components/AdminNavbar";
 
 // ===== Core Pages =====
 import Home from "./pages/Home";
+import AboutUs from "./pages/AboutUs";
+import ContactUs from "./pages/ContactUs";
+import UserGuide from "./pages/UserGuide";
 import GroupSync from "./pages/GroupSync";
 import Moodboard from "./pages/Moodboard";
 import MoodMovies from "./pages/MoodMovies";
@@ -44,7 +49,7 @@ import RecommendationsHub from "./pages/RecommendationsHub";
 import UsersPage from "./pages/Admin/UserPage";
 import AnalyticsPage from "./pages/Admin/AnalyticsPage";
 import FeedbackPage from "./pages/Admin/FeedbackPage";
-import ContactsPage from "./pages/Admin/ContactsPage"; // ✅ FIXED — added back
+import ContactsPage from "./pages/Admin/ContactsPage";
 
 // ===== Splash Screen =====
 import SplashScreen from "./pages/SplashScreen";
@@ -61,73 +66,37 @@ export default function App() {
 
 function AppContent() {
   const location = useLocation();
-  const [selectedCategory, setSelectedCategory] = useState(null);
 
-  useEffect(() => {
-    const savedCategory = localStorage.getItem("selectedCategory");
-    setSelectedCategory(savedCategory);
-  }, [location.pathname]);
-
-  // 🧭 Routes where Navbar and Chatbot should be hidden
-  const hideNavbarRoutes = [
-    "/login",
-    "/signup",
-    "/",
-    "/choose",
-    "/admin",
-    "/admin/users",
-    "/admin/analytics",
-    "/admin/feedback",
-    "/admin/contacts", // ✅ added
-    "/book-preferences",
-    "/books/wishlist",
-    "/music-preferences",
-    "/music/artist",
-    "/music/popularity",
-    "/music/blend",
-    "/recommendations-hub",
-  ];
-
+  // 🎯 Routes where Chatbot & NavButtons are hidden
   const hideChatbotRoutes = [
     "/",
     "/login",
     "/signup",
     "/chat",
+    "/choose",
     "/admin",
     "/admin/users",
     "/admin/analytics",
     "/admin/feedback",
-    "/admin/contacts", // ✅ added
+    "/admin/contacts",
   ];
 
-  const hideNavbar = hideNavbarRoutes.includes(location.pathname);
+  const hideNavButtons =
+    location.pathname.startsWith("/admin") || location.pathname === "/choose";
+
   const hideChatbotButton = hideChatbotRoutes.includes(location.pathname);
-  const isChoosePage = location.pathname === "/choose";
-
-  // 🧠 Navbar logic
-  let showNavbar = false;
-  let showOnlyLogout = false;
-
-  if (!hideNavbar) {
-    if (isChoosePage) {
-      showNavbar = true;
-      showOnlyLogout = true;
-    } else if (selectedCategory) {
-      showNavbar = true;
-    }
-  }
 
   return (
     <div className="app">
+      {/* 🧭 Admin Navbar (visible only on /admin routes) */}
+      {location.pathname.startsWith("/admin") && <AdminNavbar />}
+
       {/* 🎥 Background Video */}
       <video autoPlay loop muted playsInline className="background-video">
         <source src="/bg.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
       <div className="video-overlay"></div>
-
-      {/* 🧭 Conditional Navbar */}
-      {showNavbar && <Navbar showOnlyLogout={showOnlyLogout} />}
 
       <main className="main-content">
         <Routes>
@@ -136,6 +105,9 @@ function AppContent() {
 
           {/* 🌍 Public Pages */}
           <Route path="/home" element={<Home />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/contact" element={<ContactUs />} />
+          <Route path="/guide" element={<UserGuide />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
 
@@ -250,7 +222,7 @@ function AppContent() {
             }
           />
 
-          {/* 🔁 Shared Auth Routes */}
+          {/* 🔁 Shared Authenticated Routes */}
           <Route
             path="/feedback"
             element={
@@ -302,7 +274,7 @@ function AppContent() {
             }
           />
 
-          {/* 🛠️ Admin Dashboard & Subpages */}
+          {/* 🛠 Admin Dashboard & Subpages */}
           <Route
             path="/admin"
             element={
@@ -347,6 +319,9 @@ function AppContent() {
           {/* 🧭 Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+
+        {/* 🔄 Navigation Buttons */}
+        {!hideNavButtons && <NavigationButtons />}
       </main>
 
       {/* 💬 Floating Chat Button */}

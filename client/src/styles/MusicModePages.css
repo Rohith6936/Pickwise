@@ -4,7 +4,7 @@
    ============================== */
 
 .music-mode-page {
-  padding: 40px;
+  padding: 6rem 40px 40px; /* extra top padding for fixed navbar */
   background: transparent !important; /* remove dark overlay */
   color: white;
   text-align: center;
@@ -12,11 +12,19 @@
   position: relative;
   z-index: 2; /* above video */
   animation: fadeIn 0.8s ease-in-out;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 /* Remove unnecessary overlay */
 .music-mode-page::before {
   display: none;
+}
+
+@media (max-width: 768px) {
+  .music-mode-page {
+    padding-top: 8.5rem; /* account for wrapped navbar height on small screens */
+  }
 }
 
 /* 🎵 Main Heading */

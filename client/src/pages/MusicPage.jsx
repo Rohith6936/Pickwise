@@ -1,4 +1,3 @@
-// src/pages/MusicPage.jsx
 import React, { useEffect, useState } from "react";
 import { getRecommendations } from "../api";
 import "../styles/RecommendationPages.css";
@@ -11,38 +10,61 @@ const MusicPage = () => {
   useEffect(() => {
     const fetchSongs = async () => {
       try {
-        const { data } = await getRecommendations(user.email, "music");
-        setSongs(data.recommendations || []);
+        // ✅ Defensive check for missing user/email
+        if (!user?.email) {
+          console.warn("⚠️ No user email found in localStorage.");
+          setSongs([]);
+          return;
+        }
+
+        // ✅ The API might return either `data.recommendations` or just `recommendations`
+        const res = await getRecommendations(user.email, "music");
+        const recommendations =
+          res?.data?.recommendations || res?.recommendations || [];
+        setSongs(recommendations);
       } catch (err) {
         console.error("❌ Error fetching music recommendations:", err);
+        setSongs([]);
       } finally {
         setLoading(false);
       }
     };
-    fetchSongs();
-  }, [user.email]);
 
-  if (loading) return <div className="loading-text">🎵 Fetching music recommendations...</div>;
+    fetchSongs();
+  }, [user?.email]);
+
+  if (loading)
+    return (
+      <div className="loading-text">
+        🎵 Fetching music recommendations...
+      </div>
+    );
 
   return (
     <div className="recommendations-container">
       <h2>🎵 Music Recommendations</h2>
 
       {songs.length === 0 ? (
-        <p className="empty-text">No music recommendations found. Try updating your preferences!</p>
+        <p className="empty-text">
+          No music recommendations found. Try updating your preferences!
+        </p>
       ) : (
         <div className="recommendation-grid">
           {songs.map((song, index) => (
             <div key={index} className="recommendation-card">
               <img
-                src={song.artwork || "https://via.placeholder.com/200x200.png?text=No+Cover"}
-                alt={song.title}
+                src={
+                  song.artwork ||
+                  "https://via.placeholder.com/200x200.png?text=No+Cover"
+                }
+                alt={song.title || "Song"}
                 className="recommendation-img"
               />
               <div className="recommendation-info">
-                <h3>{song.title}</h3>
-                <p>🎤 {song.artist}</p>
-                <p>💿 {song.album}</p>
+                <h3>{song.title || "Untitled"}</h3>
+                {song.artist && <p>🎤 {song.artist}</p>}
+                {song.album && <p>💿 {song.album}</p>}
+
                 {song.previewUrl && (
                   <audio controls className="preview-audio">
                     <source src={song.previewUrl} type="audio/mpeg" />

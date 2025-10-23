@@ -1,3 +1,4 @@
+/* // finalworking/p6/client/src/styles/Preferences.css */
 /* ==============================
    Preferences.css (Updated)
    ============================== */
@@ -9,10 +10,16 @@
   align-items: center;
   min-height: 100vh;
   background: transparent !important; /* remove black gradient */
-  padding: 20px;
+  padding: 7.5rem 20px 20px; /* larger top padding for fixed navbar */
   color: #fff;
   position: relative;
   z-index: 2; /* keep above video */
+}
+
+@media (max-width: 768px) {
+  .preferences-container {
+    padding-top: 8.5rem; /* account for wrapped navbar height on small screens */
+  }
 }
 
 /* ==============================

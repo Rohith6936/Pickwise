@@ -1,10 +1,11 @@
+/* // finalworking/p6/client/src/styles/BookPreferences.css   */
 /* ==============================
    BookPreferences.css (Updated)
    Transparent + Video Background
    ============================== */
 
 .book-preferences-container {
-  padding: 40px;
+  padding: 6rem 40px 40px; /* extra top padding for fixed navbar */
   text-align: center;
   color: white;
   background: transparent !important; /* Remove solid background */
@@ -13,9 +14,17 @@
   position: relative;
   z-index: 2; /* keep above video */
   animation: fadeIn 0.8s ease-in-out;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-/* 🏷️ Page Title */
+@media (max-width: 768px) {
+  .book-preferences-container {
+    padding-top: 8.5rem; /* account for wrapped navbar height on small screens */
+  }
+}
+
+/* 🏷 Page Title */
 .page-title {
   font-size: 2rem;
   font-weight: bold;
@@ -98,7 +107,7 @@
   box-shadow: 0 0 16px rgba(35, 134, 54, 0.6);
 }
 
-/* ❤️ Wishlist Card Highlight */
+/* ❤ Wishlist Card Highlight */
 .wishlist-card {
   border: 1px solid #ff4971;
   box-shadow: 0 0 16px rgba(255, 73, 113, 0.3);

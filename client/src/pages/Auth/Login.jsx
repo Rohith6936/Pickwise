@@ -1,4 +1,3 @@
-// src/pages/Auth/Login.jsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { login, getPreferences } from "../../api";
@@ -8,7 +7,7 @@ function Login() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false); // ✅ Loading indicator
+  const [loading, setLoading] = useState(false); // ✅ Show "Logging in..." feedback
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -20,7 +19,7 @@ function Login() {
     setLoading(true);
 
     try {
-      // ✅ 1. Authenticate user
+      // ✅ 1. Authenticate the user
       const res = await login(form);
       const { token, user } = res.data || {};
 
@@ -28,7 +27,7 @@ function Login() {
         throw new Error("Invalid login response from server");
       }
 
-      // ✅ 2. Save authentication info
+      // ✅ 2. Store authentication data locally
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
       localStorage.setItem("userEmail", user.email);
@@ -36,16 +35,16 @@ function Login() {
       const email = user.email;
       const role = user.role || "user";
 
-      // ✅ 3. Redirect admin users immediately
+      // ✅ 3. Redirect admin users
       if (role === "admin") {
-        navigate("/admin");
+        navigate("/admin", { replace: true });
         return;
       }
 
-      // ✅ 4. Check for locally saved preferences
+      // ✅ 4. Check for local preferences first
       const localPrefs = localStorage.getItem(`preferences_${email}`);
       if (localPrefs) {
-        navigate("/choose");
+        navigate("/choose", { replace: true });
         return;
       }
 
@@ -56,13 +55,13 @@ function Login() {
 
         if (prefs?.genres?.length > 0) {
           localStorage.setItem(`preferences_${email}`, JSON.stringify(prefs));
-          navigate("/dashboard");
+          navigate("/dashboard", { replace: true });
         } else {
-          navigate("/choose");
+          navigate("/choose", { replace: true });
         }
       } catch (err) {
         console.error("❌ Error fetching preferences:", err);
-        navigate("/preferences");
+        navigate("/preferences", { replace: true });
       }
     } catch (err) {
       console.error("❌ Login failed:", err);
@@ -80,7 +79,10 @@ function Login() {
     <div className="auth-container">
       <div className="auth-box">
         <h2>Login</h2>
-        {error && <p style={{ color: "red" }}>{error}</p>}
+
+        {/* ⚠️ Error Message */}
+        {error && <p className="auth-error">{error}</p>}
+
         <form onSubmit={handleSubmit}>
           <input
             type="email"

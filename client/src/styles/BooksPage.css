@@ -1,3 +1,4 @@
+/* // finalworking/p6/client/src/styles/BooksPage.css */
 /* ==============================
    BooksPage.css (Updated)
    Transparent + Video Background
@@ -103,7 +104,7 @@
   transform: scale(1.05);
 }
 
-/* ✍️ Author */
+/* ✍ Author */
 .author {
   font-size: 0.9rem;
   color: #a9a9a9;

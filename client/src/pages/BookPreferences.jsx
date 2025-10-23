@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/BookPreferences.css";
 import { FaHeart, FaBookOpen } from "react-icons/fa";
+import Navbar from "../components/Navbar"; // ✅ Corrected import path
 
 const BookPreferences = () => {
   const navigate = useNavigate();
@@ -16,12 +17,15 @@ const BookPreferences = () => {
 
   return (
     <div className="book-preferences-container">
+      {/* 🌐 Top Navbar */}
+      <Navbar hideHome hidePreferences hideProfile hideMood />
+
       <h1 className="page-title">
         <FaBookOpen className="icon" /> Choose Your Book Preferences
       </h1>
 
       <div className="book-options-grid">
-        {/* Genre Selection Card */}
+        {/* 📚 Genre Selection Card */}
         <div className="option-card">
           <h2>Select by Genre</h2>
           <form onSubmit={handleSubmit}>
@@ -44,7 +48,7 @@ const BookPreferences = () => {
           </form>
         </div>
 
-        {/* Wishlist Card */}
+        {/* ❤️ Wishlist Card */}
         <div
           className="option-card wishlist-card"
           onClick={() => navigate("/books/wishlist")}

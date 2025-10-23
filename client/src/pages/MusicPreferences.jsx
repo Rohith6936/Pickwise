@@ -1,16 +1,21 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/MusicModePages.css";
+import Navbar from "../components/Navbar"; // ✅ corrected import path
 
 const MusicPreferences = () => {
   const navigate = useNavigate();
 
   return (
     <div className="music-mode-page">
+      {/* 🎵 Navbar with hidden options */}
+      <Navbar hideHome hidePreferences hideProfile hideMood />
+
       <h1>🎵 Music Preferences</h1>
       <p>Select how you want to explore music:</p>
 
       <div className="music-mode-options">
+        {/* 🎤 Artist-based */}
         <div
           className="music-mode-card"
           onClick={() => navigate("/music/artist")}
@@ -19,6 +24,7 @@ const MusicPreferences = () => {
           <p>Discover tracks based on your favorite singers</p>
         </div>
 
+        {/* 📈 Popularity-based */}
         <div
           className="music-mode-card"
           onClick={() => navigate("/music/popularity")}
@@ -27,6 +33,7 @@ const MusicPreferences = () => {
           <p>Explore most popular, trending, or newly released songs</p>
         </div>
 
+        {/* 🤝 Blend Mode */}
         <div
           className="music-mode-card"
           onClick={() => navigate("/music/blend")}

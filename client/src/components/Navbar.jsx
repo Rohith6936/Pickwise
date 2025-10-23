@@ -1,8 +1,9 @@
+// finalworking/p6/client/src/components/Navbar.jsx
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/Navbar.css";
 
-function Navbar({ showOnlyLogout = false }) {
+function Navbar({ showOnlyLogout = false, hideHome = false, hideMood = false, hidePreferences = false, hideProfile = false }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
@@ -25,7 +26,7 @@ function Navbar({ showOnlyLogout = false }) {
     localStorage.removeItem("userPreferences");
     localStorage.removeItem("selectedCategory"); // clear category too
     setUser(null);
-    navigate("/login");
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -44,21 +45,21 @@ function Navbar({ showOnlyLogout = false }) {
       ) : (
         // ✅ Full Navbar (after user chooses "Movies")
         <div className="navbar-links">
-          <Link to="/Home">Home</Link>
-          <Link to="/moodboard">Mood-Based</Link>
+          {!hideHome && <Link to="/home">Home</Link>}
+          {!hideMood && <Link to="/moodboard">Mood-Based</Link>}
 
           {/* 👤 User-only link */}
-          {user && user.role === "user" && (
+          {user && user.role === "user" && !hidePreferences && (
             <Link to="/preferences">Preferences</Link>
           )}
 
-          {/* 🛠️ Admin-only link */}
+          {/* 🛠 Admin-only link */}
           {user && user.role === "admin" && (
             <Link to="/admin">Admin Dashboard</Link>
           )}
 
           {/* Display username */}
-          {user && <span className="user-info">Hi, {user.name || "User"}</span>}
+          {user && !hideProfile && <span className="user-info">Hi, {user.name || "User"}</span>}
         </div>
       )}
     </nav>
@@ -66,4 +67,3 @@ function Navbar({ showOnlyLogout = false }) {
 }
 
 export default Navbar;
-

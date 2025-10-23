@@ -6,6 +6,7 @@ import {
 } from "../api";
 import "../styles/Preferences.css";
 import { toast, Toaster } from "react-hot-toast";
+import Navbar from "../components/Navbar"; // ✅ Corrected path
 
 export default function Preferences() {
   const [genres, setGenres] = useState([]);
@@ -37,7 +38,6 @@ export default function Preferences() {
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     const email = storedUser ? JSON.parse(storedUser).email : null;
-
     if (!email) return;
 
     getPreferences(email)
@@ -47,9 +47,7 @@ export default function Preferences() {
         setEra(prefs.era || "");
         setFavorites((prefs.favorites || []).join(", "));
       })
-      .catch(() => {
-        console.log("ℹ️ No preferences found, showing empty form.");
-      });
+      .catch(() => console.log("ℹ No preferences found, showing empty form."));
   }, []);
 
   // ✅ Save preferences
@@ -97,12 +95,13 @@ export default function Preferences() {
 
   return (
     <div className="preferences-container">
+      <Navbar hideHome hidePreferences hideProfile />
       <Toaster position="top-center" reverseOrder={false} />
 
       <form className="preferences-card" onSubmit={handleSubmit}>
         <h2>🎬 Movie Preferences</h2>
 
-        {/* GENRES */}
+        {/* 1️⃣ GENRES */}
         <h3>1️⃣ Select your favorite genres</h3>
         <div className="genre-list">
           {genreList.map((g) => (
@@ -116,7 +115,7 @@ export default function Preferences() {
           ))}
         </div>
 
-        {/* ERA */}
+        {/* 2️⃣ ERA */}
         <h3>2️⃣ What kind of movies do you prefer?</h3>
         <select value={era} onChange={(e) => setEra(e.target.value)} required>
           <option value="">-- Select Era --</option>
@@ -125,7 +124,7 @@ export default function Preferences() {
           <option value="Both">🎬 Both</option>
         </select>
 
-        {/* FAVORITES */}
+        {/* 3️⃣ FAVORITES */}
         <h3>3️⃣ Name 2–3 of your favorite movies</h3>
         <textarea
           placeholder="Type your favorite movies (comma-separated)..."

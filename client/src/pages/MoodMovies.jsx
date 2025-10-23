@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import "../styles/Mood.css";
-import { API_BASE_URL } from "../api"; // ✅ import this
+import { API_BASE_URL } from "../api"; // ✅ centralized backend URL
 
 const providerLinks = {
   "Netflix": "https://www.netflix.com/",
@@ -30,12 +30,12 @@ export default function MoodMovies() {
   const fetchMovies = useCallback(async () => {
     try {
       setLoading(true);
-      // ✅ Dynamic URL based on environment
+      // ✅ Environment-safe API call
       const res = await fetch(`${API_BASE_URL}/api/mood/${genre}?t=${Date.now()}`);
       const data = await res.json();
       setMovies(data);
     } catch (err) {
-      console.error("Error fetching movies:", err);
+      console.error("❌ Error fetching movies:", err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -60,7 +60,7 @@ export default function MoodMovies() {
           className={`refresh-btn ${refreshing ? "refreshing" : ""}`}
           disabled={loading}
         >
-          🔄 Refresh Recommendations
+          🔄 {refreshing ? "Refreshing..." : "Refresh Recommendations"}
         </button>
       </div>
 
@@ -73,7 +73,11 @@ export default function MoodMovies() {
           ) : (
             movies.map((movie) => (
               <div key={movie.id} className="movie-card">
-                <img src={movie.poster} alt={movie.title} className="movie-poster large" />
+                <img
+                  src={movie.poster}
+                  alt={movie.title}
+                  className="movie-poster large"
+                />
                 <div className="movie-info">
                   <h3>{movie.title}</h3>
                   <p>{movie.release_date?.slice(0, 4) || "N/A"}</p>
