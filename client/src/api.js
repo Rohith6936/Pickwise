@@ -168,6 +168,20 @@ export const reindexContent = (data) =>
   API.post("/admin/content/reindex", data);
 
 // =====================================================
+// ✉️ CONTACT FORM (User → Admin)
+// =====================================================
+export const submitContact = async (data) => {
+  try {
+    const res = await API.post("/contact", data);
+    return res.data;
+  } catch (err) {
+    console.error("❌ Error submitting contact form:", err.response?.data || err.message);
+    throw err;
+  }
+};
+
+
+// =====================================================
 // 📨 CONTACT ADMIN MANAGEMENT (✅ NEWLY ADDED)
 // =====================================================
 
