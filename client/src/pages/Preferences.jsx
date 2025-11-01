@@ -1,9 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  saveMoviePreferences as savePreferences,
-  getMoviePreferences as getPreferences,
-} from "../api";
+import { savePreferences, getPreferences } from "../api";
 import "../styles/Preferences.css";
 import { toast, Toaster } from "react-hot-toast";
 import Navbar from "../pages/Navbar";
@@ -39,7 +36,7 @@ export default function Preferences() {
     const email = storedUser ? JSON.parse(storedUser).email : null;
     if (!email) return;
 
-    getPreferences(email)
+    getPreferences(email, "movies")
       .then(({ data }) => {
         const prefs = data?.data || data || {};
         setGenres(prefs.genres || []);
@@ -76,10 +73,9 @@ export default function Preferences() {
 
     try {
       console.log("📧 Sending Preferences:", email, userPrefs);
-      const res = await savePreferences(email, userPrefs);
+      const res = await savePreferences(email, "movies", userPrefs);
       console.log("📩 API Response:", res);
 
-      // ✅ Handle both success types
       if (res.data?.success || res.status === 200) {
         localStorage.setItem(`preferences_${email}`, JSON.stringify(userPrefs));
         toast.success("✅ Preferences saved successfully!");

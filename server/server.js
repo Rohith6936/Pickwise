@@ -6,6 +6,10 @@ import nodemailer from "nodemailer";
 import mongoose from "mongoose";
 import { Resend } from "resend";
 import { connectDB } from "./config/db.js";
+dotenv.config();
+
+// 🔍 Debug check for environment variable
+console.log("🔑 GEMINI_API_KEY loaded:", process.env.GEMINI_API_KEY ? "✅ Yes" : "❌ No");
 
 // =====================================================
 // 🧩 ROUTE IMPORTS

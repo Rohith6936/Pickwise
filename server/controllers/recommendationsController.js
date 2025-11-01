@@ -30,11 +30,13 @@ async function getUserPrefs(email) {
 // ===============================================================
 // 🎯 1️⃣ Fetch Single-Domain Recommendations (Movies, Books, Music)
 // ===============================================================
+import _ from "lodash"; // 🆕 Add this at the top of the file
+
 export const getRecommendations = async (req, res) => {
   try {
     const { email, type } = req.params;
-    const { explain } = req.query;
-    console.log(`📩 Request received for: ${email}, Type: ${type}`);
+    const { explain, force } = req.query; // 🆕 Added force flag
+    console.log(`📩 Request received for: ${email}, Type: ${type}, Force: ${force}`);
 
     if (!email || !type) {
       return res.status(400).json({
@@ -50,7 +52,45 @@ export const getRecommendations = async (req, res) => {
       });
     }
 
-    // 🔍 Call the recommendation service to get candidate items
+    // 1️⃣ Fetch the current user preferences
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    const currentPrefs = user.preferences || {};
+    console.log("🧩 Current Preferences:", JSON.stringify(currentPrefs, null, 2));
+
+    // 2️⃣ Check for existing recommendation in DB
+    const existing = await Recommendation.findOne({ email, type }).sort({ createdAt: -1 });
+
+    // 🆕 Handle Force Refresh
+    if (String(force).toLowerCase() === "true") {
+      console.log("🔁 Force refresh → Ignoring cache and regenerating recommendations...");
+    } else if (existing) {
+      const prevPrefs = existing.preferencesSnapshot || {};
+      console.log("📜 Previous Snapshot:", JSON.stringify(prevPrefs, null, 2));
+
+      const prefsChanged = !_.isEqual(prevPrefs, currentPrefs); // 🧠 Deep compare
+
+      console.log("🧮 Preferences Changed?:", prefsChanged);
+
+      if (!prefsChanged) {
+        console.log("✅ Preferences unchanged → Returning cached recommendations");
+        return res.status(200).json({
+          success: true,
+          recommendations: existing.items || [],
+          source: "cache",
+          message: `✅ Cached ${type} recommendations fetched successfully`,
+        });
+      } else {
+        console.log("⚠️ Preferences changed → Regenerating recommendations...");
+      }
+    } else {
+      console.log("💾 No previous recommendations found → Generating new ones...");
+    }
+
+    // 3️⃣ Generate new recommendations using your service
     const data = await getRecommendationsService(email, type);
 
     if (!data || data.length === 0) {
@@ -62,42 +102,33 @@ export const getRecommendations = async (req, res) => {
       });
     }
 
-    // If explain=true, enrich with XAI using embedding-based scorer
+    // 4️⃣ If explain=true, enrich with XAI
+    const withIds = data.map((it) => ({ ...it, id: slugifyId(it, type) }));
+    let finalData = withIds;
+
     if (String(explain).toLowerCase() === "true") {
-      const prefs = await getUserPrefs(email);
-      const enriched = await getAIRecommendationsWithExplanations(prefs, data, type);
-      const withIds = enriched.map((it) => ({ ...it, id: slugifyId(it, type) }));
-
-      // 💾 Save in history
-      await Recommendation.create({
-        email,
-        type,
-        items: withIds,
-        createdAt: new Date(),
-      });
-
-      console.log(`✅ ${type} recommendations (with explanations) saved for ${email}`);
-      return res.status(200).json({
-        success: true,
-        recommendations: withIds,
-        message: `✅ ${type} recommendations with explanations fetched successfully`,
-      });
+      const enriched = await getAIRecommendationsWithExplanations(currentPrefs, withIds, type);
+      finalData = enriched.map((it) => ({ ...it, id: slugifyId(it, type) }));
+      console.log(`💡 Generated XAI explanations for ${type}`);
     }
 
-    // 💾 Save in history (non-explain)
-    const withIds = data.map((it) => ({ ...it, id: slugifyId(it, type) }));
+    // 5️⃣ Save new recommendations + preference snapshot
     await Recommendation.create({
       email,
       type,
-      items: withIds,
+      items: finalData,
+      preferencesSnapshot: currentPrefs, // ✅ Ensures we compare next time
       createdAt: new Date(),
     });
 
-    console.log(`✅ ${type} recommendations saved for ${email}`);
+    console.log(`✅ New ${type} recommendations saved for ${email}`);
+
+    // 6️⃣ Respond to client
     res.status(200).json({
       success: true,
-      recommendations: withIds,
-      message: `✅ ${type} recommendations fetched successfully`,
+      recommendations: finalData,
+      source: force ? "forced-refresh" : "new",
+      message: `✅ ${type} recommendations generated successfully`,
     });
   } catch (err) {
     console.error("❌ Controller Error:", err.message);
@@ -113,15 +144,16 @@ export const getRecommendations = async (req, res) => {
 // ===============================================================
 export const getRecommendationsQuery = async (req, res) => {
   try {
-    const { email, type = "movies", explain } = req.query;
+    const { email, type = "movies", explain, force } = req.query; // added force param here too
     if (!email) {
       return res.status(400).json({ success: false, message: "Missing email" });
     }
     if (!["movies", "books", "music"].includes(type)) {
       return res.status(400).json({ success: false, message: "Invalid type" });
     }
-    // Delegate to existing handler by faking params
+    // Delegate to existing handler
     req.params = { email, type };
+    req.query = { explain, force };
     return getRecommendations(req, res);
   } catch (err) {
     console.error("❌ Query-based recommendations error:", err.message);
@@ -135,7 +167,7 @@ export const getRecommendationsQuery = async (req, res) => {
 export const getCrossDomainRecommendations = async (req, res) => {
   try {
     const { email } = req.params;
-    const { base, query } = req.query; // user may provide `base` or `query`
+    const { base, query } = req.query;
 
     if (!email) {
       return res.status(400).json({
@@ -144,7 +176,6 @@ export const getCrossDomainRecommendations = async (req, res) => {
       });
     }
 
-    // Determine whether to use user input or stored preference
     let source = "";
     if (query) {
       source = `User Input: "${query}"`;
@@ -159,7 +190,6 @@ export const getCrossDomainRecommendations = async (req, res) => {
 
     console.log(`🌍 Cross-domain request for ${email} | ${source}`);
 
-    // 🔍 Fetch AI results (Gemini + APIs)
     const result = await getCrossDomainRecommendationsService(email, query || base);
 
     if (!result || !result.recommendations) {
@@ -170,7 +200,6 @@ export const getCrossDomainRecommendations = async (req, res) => {
       });
     }
 
-    // 💾 Save to history
     await Recommendation.create({
       email,
       type: query ? `cross-query` : `cross-${base}`,
@@ -182,7 +211,7 @@ export const getCrossDomainRecommendations = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      ...result, // includes baseQuery/baseType and recommendations
+      ...result,
       message: `✅ Cross-domain recommendations fetched successfully based on ${query ? "your input" : "preferences"}`,
     });
   } catch (err) {
@@ -236,7 +265,7 @@ export const getHistory = async (req, res) => {
 };
 
 // ===============================================================
-// 🧠 4️⃣ Per-recommendation Explanation: GET /api/recommendations/:id/explain?email=<email>&type=movies
+// 🧠 4️⃣ Per-recommendation Explanation
 // ===============================================================
 export const getRecommendationExplanation = async (req, res) => {
   try {
@@ -255,9 +284,7 @@ export const getRecommendationExplanation = async (req, res) => {
       if (latest && Array.isArray(latest.items)) {
         found = latest.items.find((x) => String(x.id) === String(id));
       }
-    } catch (dbErr) {
-      // ignore DB errors and fall back to fresh fetch
-    }
+    } catch (dbErr) {}
 
     if (!found) {
       const items = await getRecommendationsService(email, type);
@@ -278,7 +305,7 @@ export const getRecommendationExplanation = async (req, res) => {
 };
 
 // ===============================================================
-// 🌐 5️⃣ Global Feature Importances: GET /api/recommendations/global-explain?type=movies
+// 🌐 5️⃣ Global Feature Importances
 // ===============================================================
 export const getGlobalExplanations = async (req, res) => {
   try {
@@ -287,8 +314,6 @@ export const getGlobalExplanations = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid type" });
     }
     const result = await getGlobalFeatureImportances([], type);
-    // Example response:
-    // { success: true, type: "movies", top_terms: [{term, score}], summary }
     return res.status(200).json({ success: true, ...result });
   } catch (err) {
     console.error("❌ Global explain error:", err.message);

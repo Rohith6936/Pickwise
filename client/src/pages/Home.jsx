@@ -10,8 +10,8 @@ function Home() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(getMessage());
   const [preferences, setPreferences] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState(null); // 🧭 new state for cache timestamp
-  const [usedCache, setUsedCache] = useState(false); // ⚡ track if cache/fallback used
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [usedCache, setUsedCache] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -23,7 +23,7 @@ function Home() {
       return;
     }
 
-    // ✅ Load preferences (localStorage → backend fallback)
+    // ✅ Load preferences (from localStorage or backend)
     const localPrefs = localStorage.getItem(`preferences_${email}`);
     if (localPrefs) {
       setPreferences(JSON.parse(localPrefs));
@@ -39,12 +39,11 @@ function Home() {
         .catch(() => console.warn("⚠️ No preferences found in backend."));
     }
 
-    // ✅ Fetch movie recommendations (with cache awareness)
+    // ✅ Fetch movie recommendations (cached-first)
     const fetchRecommendations = async () => {
       try {
         const { data } = await getRecommendations(email);
 
-        // If backend indicates fallback/cache was used
         if (data?.usedCache || data?.fromCache) {
           setUsedCache(true);
           toast("⚠️ Showing cached recommendations (AI offline)", {
@@ -53,7 +52,6 @@ function Home() {
           });
         }
 
-        // Capture last updated timestamp from backend
         if (data?.lastUpdated) {
           setLastUpdated(new Date(data.lastUpdated));
         }
@@ -72,7 +70,7 @@ function Home() {
       }
     };
 
-    // ✅ Fetch backup history if new recs fail
+    // ✅ Fetch from history (if AI fails)
     const fetchHistory = async () => {
       try {
         const { data } = await API.get(`/recommendations/${email}/history`);
@@ -80,7 +78,7 @@ function Home() {
         if (latest.length > 0) {
           setRecommendations(formatMovies(latest));
           setUsedCache(true);
-          toast("⚠️ Showing last saved recommendations.", { icon: "🕒" });
+          toast("🕒 Showing last saved recommendations.", { icon: "🕒" });
         } else {
           setRecommendations([]);
         }
@@ -94,12 +92,49 @@ function Home() {
 
     fetchRecommendations();
 
-    // ✅ Update greeting every minute
+    // 🕒 Update greeting every minute
     const interval = setInterval(() => setMessage(getMessage()), 60000);
     return () => clearInterval(interval);
   }, []);
 
-  // 🕒 Format last updated time for UI
+  // ✅ Force Refresh Recommendations (Gemini re-generation)
+  const handleRefresh = async () => {
+    const storedUser = localStorage.getItem("user");
+    const email = storedUser ? JSON.parse(storedUser).email : null;
+
+    if (!email) {
+      toast.error("⚠️ Unable to refresh — user not logged in.");
+      return;
+    }
+
+    setLoading(true);
+    setUsedCache(false);
+    toast.loading("🔁 Generating fresh recommendations...", { id: "refresh" });
+
+    try {
+      const { data } = await API.get(`/recommendations/${email}/movies?force=true`);
+
+      if (data?.success) {
+        setRecommendations(formatMovies(data.recommendations));
+        toast.success("✨ New recommendations generated!", { id: "refresh" });
+
+        if (data?.lastUpdated) {
+          setLastUpdated(new Date(data.lastUpdated));
+        }
+
+        setUsedCache(false);
+      } else {
+        toast.error("Failed to generate new recommendations.", { id: "refresh" });
+      }
+    } catch (err) {
+      console.error("❌ Error during forced refresh:", err);
+      toast.error("Error while refreshing recommendations.", { id: "refresh" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🕒 Format last updated time
   const formattedLastUpdated = lastUpdated
     ? new Date(lastUpdated).toLocaleString()
     : null;
@@ -120,7 +155,7 @@ function Home() {
           taste and preferences.
         </p>
 
-        {/* ✅ Display preferences summary */}
+        {/* ✅ Display Preferences Summary */}
         {preferences && (
           <p style={{ marginTop: "1rem", fontStyle: "italic" }}>
             🎯 Based on your preferences:{" "}
@@ -134,7 +169,7 @@ function Home() {
           </p>
         )}
 
-        {/* 🧠 Cache info */}
+        {/* 🧠 Cache Info */}
         {formattedLastUpdated && (
           <p style={{ color: "#ccc", fontSize: "0.9rem" }}>
             🕒 Last AI update: {formattedLastUpdated}
@@ -145,14 +180,15 @@ function Home() {
         <div className="button-row">
           <button
             className="primary-button"
-            onClick={() => window.location.reload()}
+            onClick={handleRefresh}
+            disabled={loading}
           >
-            🔄 Refresh Recommendations
+            {loading ? "⏳ Refreshing..." : "🔁 Refresh Recommendations"}
           </button>
         </div>
       </div>
 
-      {/* 🎬 Recommendations */}
+      {/* 🎬 Recommendations Section */}
       <div className="carousel">
         <h2 className="carousel-heading">Your Top Picks</h2>
         {loading ? (

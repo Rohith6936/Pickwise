@@ -2,11 +2,17 @@ import mongoose from "mongoose";
 
 const RecommendationSchema = new mongoose.Schema({
   email: { type: String, required: true },
-  // New flexible fields to store different domains and XAI-enriched items
-  type: { type: String }, // e.g., 'movies', 'books', 'music', 'cross-query'
-  items: { type: [mongoose.Schema.Types.Mixed], default: undefined },
 
-  // Backward compatibility: legacy movies array
+  // Domain type: movies, books, music, or cross-domain
+  type: { type: String, required: true }, // e.g., 'movies', 'books', 'music', 'cross-query'
+
+  // Recommended items (with or without explanations)
+  items: { type: [mongoose.Schema.Types.Mixed], default: [] },
+
+  // Snapshot of user preferences used during generation
+  preferencesSnapshot: { type: Object, default: {} }, // ✅ Added for change detection
+
+  // Legacy field for backward compatibility
   movies: [
     {
       title: String,
@@ -16,6 +22,7 @@ const RecommendationSchema = new mongoose.Schema({
       overview: String,
     },
   ],
+
   createdAt: { type: Date, default: Date.now },
 });
 

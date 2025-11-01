@@ -1,4 +1,10 @@
 // ===============================================================
+// 🌱 Load Environment Variables
+// ===============================================================
+import dotenv from "dotenv";
+dotenv.config();
+
+// ===============================================================
 // 📦 Imports & Setup
 // ===============================================================
 import axios from "axios";
@@ -10,6 +16,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 // ===============================================================
 const GEMINI_KEY = process.env.GEMINI_API_KEY?.trim();
 let genAI = null;
+
 if (!GEMINI_KEY || !GEMINI_KEY.startsWith("AIza")) {
   console.warn("⚠️ Invalid or missing GEMINI_API_KEY — AI features disabled.");
 } else {
@@ -22,7 +29,7 @@ if (!GEMINI_KEY || !GEMINI_KEY.startsWith("AIza")) {
 }
 
 // ===============================================================
-// 🧩 Fallback Recommendations (when Gemini fails)
+// 🧩 Fallback Recommendations
 // ===============================================================
 const FALLBACK_RECOMMENDATIONS = {
   movie: [
@@ -75,7 +82,9 @@ const FALLBACK_RECOMMENDATIONS = {
 async function withTimeout(promise, ms = 20000) {
   return Promise.race([
     promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms)),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms)
+    ),
   ]);
 }
 
@@ -161,13 +170,17 @@ async function getMusicDetails(term) {
 }
 
 // ===============================================================
-// 🧠 Safe Gemini Request (retry + model fallback)
+// 🧠 Safe Gemini Request (retry + automatic model fallback)
 // ===============================================================
 async function safeGeminiRequest(prompt) {
   if (!genAI) throw new Error("Gemini not initialized");
-  const models = ["gemini-1.5-flash", "gemini-2.0-flash"];
+
+  // ✅ Latest working Gemini models (2.5 generation)
+  const models = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"];
+
   for (const m of models) {
     try {
+      console.log(`🤖 Trying Gemini model: ${m}`);
       const model = genAI.getGenerativeModel({ model: m });
       const result = await withTimeout(model.generateContent(prompt), 20000);
       const text = result?.response?.text?.();
@@ -180,11 +193,12 @@ async function safeGeminiRequest(prompt) {
       }
     }
   }
+
   throw new Error("All Gemini models failed");
 }
 
 // ===============================================================
-// 🎯 Single-Domain Recommendations
+// 🎯 Single-Domain Recommendations (Enhanced Prompt + Era + Tone)
 // ===============================================================
 export const getRecommendations = async (email, type = "movies") => {
   try {
@@ -197,44 +211,60 @@ export const getRecommendations = async (email, type = "movies") => {
 
     const genres = (prefs.genres || []).join(", ") || "any genre";
     const favorites = (prefs.favorites || []).join(", ") || "none";
+    const era = prefs.era || "any era";
 
     const prompt = `
+You are an expert in recommending ${type}.
 Suggest 5 ${singularType === "book" ? "books" : singularType === "music" ? "songs or artists" : "movies"} 
-based on:
-Genres: ${genres}
-Favorites: ${favorites}
-Return plain names, one per line.
+that align with these preferences:
+
+1️⃣ Genres: ${genres}
+2️⃣ Favorites: ${favorites}
+3️⃣ Era: ${era}
+
+Focus on similar mood, tone, and storytelling style. Output plain ${singularType} names, one per line, no numbering.
 `;
 
     let names = [];
     let aiWorked = false;
 
-    // 🧠 Try Gemini
+    // 🧠 Try Gemini 2.5
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       const result = await withTimeout(model.generateContent(prompt), 15000);
-      names = result?.response?.text?.()?.split(/\r?\n/)
+      const rawText = result?.response?.text?.() || "";
+
+      names = rawText
+        .split(/\r?\n/)
         .map((x) => x.replace(/^[\-\*\d\.\)\s"]+|["]+$/g, "").trim())
-        .filter(Boolean) || [];
+        .filter(Boolean);
+
       aiWorked = names.length > 0;
+
+      if (aiWorked) {
+        console.log(`🎬 Gemini suggested ${names.length} ${type} for ${email}:`);
+        names.forEach((title, i) => console.log(`  ${i + 1}️⃣ ${title}`));
+      } else {
+        console.warn(`⚠️ Gemini returned no valid ${type} names for ${email}.`);
+        console.log("Raw Gemini output:", rawText);
+      }
     } catch (err) {
-      console.warn("💡 Gemini unavailable — using cache/fallback.");
+      console.warn("💡 Gemini unavailable — using cache/fallback.", err.message);
     }
 
-    // 📦 If Gemini failed → use cache
+    // 📦 Use cache or fallback
     if (!aiWorked && user.recommendationsCache?.[type]?.length) {
       console.log(`🗃 Using cached ${type} recommendations for ${email}`);
       return user.recommendationsCache[type];
     }
 
-    // 🧱 Fallback if no cache either
     const fallback = {
       movie: ["Inception", "Interstellar", "Titanic"],
       book: ["Harry Potter", "The Hobbit", "1984"],
       music: ["Blinding Lights", "Shape of You", "Bohemian Rhapsody"],
     }[singularType];
-    const items = names.length ? names : fallback;
 
+    const items = names.length ? names : fallback;
     const detailPromises = items.map((n) =>
       singularType === "book"
         ? getBookDetails(n)
@@ -245,7 +275,7 @@ Return plain names, one per line.
 
     const details = (await Promise.all(detailPromises)).filter(Boolean);
 
-    // ✅ Save AI results to cache (if AI worked)
+    // 💾 Cache AI results
     if (aiWorked) {
       user.recommendationsCache[type] = details;
       user.recommendationsCache.lastUpdated = new Date();
@@ -267,14 +297,16 @@ export const getCrossDomainRecommendations = async (email, query = "romantic adv
   try {
     const prompt = `
 User Query: "${query}"
-Suggest related recommendations:
+Suggest 3 relevant Movies, Music, and Books for this mood.
+
 Movies:
 - ...
 Music:
 - ...
 Books:
 - ...
-Ensure 3 for each and only plain text lists.
+
+Only plain text lists.
 `;
 
     let text = "";

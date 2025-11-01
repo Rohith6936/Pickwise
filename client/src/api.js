@@ -36,28 +36,39 @@ export const login = (data) => API.post("/auth/login", data);
 // =====================================================
 // 🎬📚🎵 USER PREFERENCES
 // =====================================================
-// ✅ Correct version for /api/preferences/:email
-export const saveMoviePreferences = (email, data) =>
-  API.post(`/preferences/${email}`, data);
+// // ✅ Correct version for /api/preferences/:email
+// export const saveMoviePreferences = (email, data) =>
+//   API.post(`/preferences/${email}`, data);
 
-export const getMoviePreferences = (email) =>
-  API.get(`/preferences/${email}`);
+// export const getMoviePreferences = (email) =>
+//   API.get(`/preferences/${email}`);
 
-export const saveBookPreferences = (email, data) =>
-  API.post(`/users/preferences/${email}/books`, data);
-export const getBookPreferences = (email) =>
-  API.get(`/users/preferences/${email}/books`);
+// export const saveBookPreferences = (email, data) =>
+//   API.post(`/users/preferences/${email}/books`, data);
+// export const getBookPreferences = (email) =>
+//   API.get(`/users/preferences/${email}/books`);
 
-export const saveMusicPreferences = (email, data) =>
-  API.post(`/users/preferences/${email}/music`, data);
-export const getMusicPreferences = (email) =>
-  API.get(`/users/preferences/${email}/music`);
+// export const saveMusicPreferences = (email, data) =>
+//   API.post(`/users/preferences/${email}/music`, data);
+// export const getMusicPreferences = (email) =>
+//   API.get(`/users/preferences/${email}/music`);
 
-export const getPreferences = (email, type = "movies") => {
-  if (type === "books") return getBookPreferences(email);
-  if (type === "music") return getMusicPreferences(email);
-  return getMoviePreferences(email);
-};
+// export const getPreferences = (email, type = "movies") => {
+//   if (type === "books") return getBookPreferences(email);
+//   if (type === "music") return getMusicPreferences(email);
+//   return getMoviePreferences(email);
+// };
+// =====================================================
+// 🎬📚🎵 USER PREFERENCES (Unified for all types)
+// =====================================================
+
+// ✅ Save preferences (movies, books, or music)
+export const savePreferences = (email, type, data) =>
+  API.post(`/preferences/${email}/${type}`, data);
+
+// ✅ Fetch preferences for a specific type
+export const getPreferences = (email, type = "movies") =>
+  API.get(`/preferences/${email}/${type}`);
 
 // =====================================================
 // 🎧 SPOTIFY INTEGRATION

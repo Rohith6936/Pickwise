@@ -1,47 +1,45 @@
 import express from "express";
-import Preferences from "../models/preferences.js";
+import User from "../models/User.js";
 
 const router = express.Router();
 
-// 🔹 Save or update preferences
-router.post("/:email", async (req, res) => {
-  const { email } = req.params;
-  const { genres, era, favorites } = req.body;
+// 🔹 Save or update preferences in User model
+router.post("/:email/:type", async (req, res) => {
+  const { email, type } = req.params;
+  const { genres = [], era = "", favorites = [], languages = [], artists = [] } = req.body;
 
   try {
-    console.log("📩 Saving preferences for:", email);
-    console.log("📦 Data received:", { genres, era, favorites });
+    console.log(`📩 Saving ${type} preferences for ${email}`);
 
-    let prefs = await Preferences.findOne({ email });
+    const prefPath = `preferences.${type}`;
 
-    if (prefs) {
-      prefs.genres = genres;
-      prefs.era = era;
-      prefs.favorites = favorites;
-      await prefs.save();
-      console.log("✅ Updated preferences for:", email);
-    } else {
-      prefs = new Preferences({ email, genres, era, favorites });
-      await prefs.save();
-      console.log("✅ Created preferences for:", email);
-    }
+    const user = await User.findOneAndUpdate(
+      { email },
+      {
+        $set: {
+          [prefPath]: { genres, era, favorites, languages, artists },
+        },
+      },
+      { new: true, upsert: true }
+    );
 
-    res.json({ success: true, data: prefs });
+    console.log(`✅ ${type} preferences saved for ${email}`);
+    res.json({ success: true, data: user.preferences[type] });
   } catch (err) {
     console.error("❌ Error saving preferences:", err.message);
     res.status(500).json({ error: "Server error while saving preferences" });
   }
 });
 
-// 🔹 Get preferences
-router.get("/:email", async (req, res) => {
-  const { email } = req.params;
+// 🔹 Get preferences for a specific type
+router.get("/:email/:type", async (req, res) => {
+  const { email, type } = req.params;
 
   try {
-    const prefs = await Preferences.findOne({ email });
-    if (!prefs) {
-      return res.status(404).json({ message: "Preferences not found" });
-    }
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const prefs = user.preferences?.[type] || {};
     res.json({ success: true, data: prefs });
   } catch (err) {
     console.error("❌ Error fetching preferences:", err.message);
